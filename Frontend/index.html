@@ -3,18 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Đăng nhập | Secure Chat</title>
+
+    <!-- Kết nối với hai tệp CSS -->
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/auth.css">
 </head>
 
 <body>
-    <main class="login-container">
+    <main class="auth-card">
         <h1>Secure Chat</h1>
-        <p>Chào mừng bạn đến với ứng dụng chat của nhóm.</p>
+        <p class="subtitle">Dự án ứng dụng chat AES và DES</p>
 
         <h2>Đăng nhập</h2>
 
         <form>
-            <div>
+            <div class="form-group">
                 <label for="username">Tên đăng nhập</label>
                 <input
                     type="text"
@@ -26,7 +31,7 @@
                 >
             </div>
 
-            <div>
+            <div class="form-group">
                 <label for="password">Mật khẩu</label>
                 <input
                     type="password"
@@ -41,7 +46,9 @@
             <button type="button" disabled>Đăng nhập</button>
         </form>
 
-        <p>Bản dựng giao diện — chưa kết nối đăng nhập.</p>
+        <p class="notice">
+            Bản dựng giao diện — chức năng đăng nhập đang được phát triển.
+        </p>
     </main>
 </body>
 </html>
