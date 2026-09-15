@@ -1,0 +1,49 @@
+:root {
+    --background: #f6f8ff;
+    --surface: #ffffff;
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --secondary: #06b6d4;
+    --text: #172033;
+    --text-muted: #697386;
+    --border: #dfe4f0;
+    --success: #16a34a;
+    --error: #dc2626;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Inter, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--background);
+}
+
+input,
+button,
+select,
+textarea {
+    font: inherit;
+}
+
+a {
+    color: var(--primary);
+    text-underline-offset: 4px;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+    -webkit-tap-highlight-color: transparent;
+}

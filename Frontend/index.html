@@ -1,47 +1,144 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>Đăng nhập | Secure Chat</title>
+
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/auth.css">
 </head>
 
 <body>
-    <main class="login-container">
-        <h1>Secure Chat</h1>
-        <p>Chào mừng bạn đến với ứng dụng chat của nhóm.</p>
 
-        <h2>Đăng nhập</h2>
+    <div class="background-shape shape-one"></div>
+    <div class="background-shape shape-two"></div>
 
-        <form>
-            <div>
-                <label for="username">Tên đăng nhập</label>
-                <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    placeholder="Nhập tên đăng nhập"
-                    autocomplete="username"
-                    required
-                >
+    <main class="auth-wrapper">
+
+        <section class="auth-card">
+
+            <!-- Logo -->
+            <div class="brand">
+                <div class="brand-icon">S</div>
+
+                <span class="brand-name">
+                    Secure Chat
+                </span>
             </div>
 
-            <div>
-                <label for="password">Mật khẩu</label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    placeholder="Nhập mật khẩu"
-                    autocomplete="current-password"
-                    required
-                >
+
+            <!-- Tiêu đề -->
+            <div class="auth-header">
+
+                <span class="auth-badge">
+                    Secure Chat Project
+                </span>
+
+                <h1>
+                    Welcome to
+                    <span>Secure Chat</span>
+                </h1>
+
+                <p>
+                    Đăng nhập để tiếp tục sử dụng hệ thống
+                    trò chuyện Secure Chat.
+                </p>
+
             </div>
 
-            <button type="button" disabled>Đăng nhập</button>
-        </form>
 
-        <p>Bản dựng giao diện — chưa kết nối đăng nhập.</p>
+            <!-- Form đăng nhập -->
+            <form id="loginForm">
+
+                <div class="form-group">
+
+                    <label for="loginUsername">
+                        Tên đăng nhập
+                    </label>
+
+                    <input
+                        type="text"
+                        id="loginUsername"
+                        placeholder="Nhập tên đăng nhập"
+                        autocomplete="username"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="loginPassword">
+                        Mật khẩu
+                    </label>
+
+                    <input
+                        type="password"
+                        id="loginPassword"
+                        placeholder="Nhập mật khẩu"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                </div>
+
+
+                <p
+                    id="message"
+                    class="form-message"
+                ></p>
+
+
+                <button
+                    type="submit"
+                    class="primary-button"
+                >
+                    <span>Đăng nhập</span>
+
+                    <span class="button-arrow">
+                        →
+                    </span>
+                </button>
+
+            </form>
+
+
+            <!-- Chuyển đăng ký -->
+            <p class="auth-switch">
+
+                Chưa có tài khoản?
+
+                <a href="./register.html">
+                    Tạo tài khoản
+                </a>
+
+            </p>
+
+
+            <!-- Footer -->
+            <div class="auth-footer">
+
+                <span class="status-dot"></span>
+
+                Prototype giao diện đăng nhập / đăng ký
+
+            </div>
+
+        </section>
+
     </main>
+
+
+    <script src="./js/auth.js"></script>
+
 </body>
+
 </html>
