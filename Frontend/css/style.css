@@ -1,20 +1,27 @@
 :root {
-    --background: #f3f7f6;
+    --background: #f6f8ff;
     --surface: #ffffff;
-    --primary: #0f766e;
-    --primary-hover: #115e59;
-    --text: #182d2a;
-    --text-muted: #536b66;
-    --border: #cbdad5;
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --secondary: #06b6d4;
+    --text: #172033;
+    --text-muted: #697386;
+    --border: #dfe4f0;
+    --success: #16a34a;
+    --error: #dc2626;
 }
 
 * {
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     margin: 0;
-    font-family: "Segoe UI", Arial, sans-serif;
+    font-family: "Segoe UI", Inter, Arial, sans-serif;
     font-size: 16px;
     line-height: 1.6;
     color: var(--text);
@@ -22,7 +29,9 @@ body {
 }
 
 input,
-button {
+button,
+select,
+textarea {
     font: inherit;
 }
 
@@ -33,6 +42,8 @@ a {
 
 button,
 a,
-input {
+input,
+select,
+textarea {
     -webkit-tap-highlight-color: transparent;
 }
