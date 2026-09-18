@@ -18,14 +18,37 @@ export async function runAESTests() {
             console.error("❌ [FAILED] Test 1: Văn bản giải mã không khớp dữ liệu ban đầu!");
         }
 
-        // 2. Kiểm tra IV ngẫu nhiên (cùng tin nhắn mã hóa 2 lần phải ra kết quả khác nhau)
-        const envelopeJson2 = await encryptMessage(originalText, key, keyId);
-        if (envelopeJson !== envelopeJson2) {
-            console.log("✅ [PASSED] Test 2: Mã hóa 2 lần tạo ra IV & Ciphertext khác nhau.");
-        } else {
-            console.error("❌ [FAILED] Test 2: IV bị trùng lặp!");
-        }
+       // 2. Cùng tin nhắn, cùng khóa: IV và bản mã phải khác nhau
+const envelopeJson2 = await encryptMessage(originalText, key, keyId);
 
+// Chuyển JSON thành đối tượng để lấy riêng IV và ciphertext
+const envelope1 = JSON.parse(envelopeJson);
+const envelope2 = JSON.parse(envelopeJson2);
+
+// So sánh từng giá trị trong hai mảng
+const arraysEqual = (a, b) =>
+  a.length === b.length &&
+  a.every((value, index) => value === b[index]);
+
+const ivDifferent = !arraysEqual(envelope1.iv, envelope2.iv);
+const ciphertextDifferent = !arraysEqual(
+  envelope1.ciphertext,
+  envelope2.ciphertext
+);
+
+if (ivDifferent && ciphertextDifferent) {
+  console.log(
+    "✅ [PASSED] Test 2: Hai lần mã hóa có IV và ciphertext khác nhau."
+  );
+} else {
+  console.error(
+    "❌ [FAILED] Test 2:",
+    {
+      ivDifferent,
+      ciphertextDifferent
+    }
+  );
+}
         // 3. Kiểm tra tính toàn vẹn (Chỉnh sửa ciphertext/tag phải bị từ chối)
         const tamperedEnvelope = JSON.parse(envelopeJson);
         tamperedEnvelope.ciphertext[0] ^= 1; // Sửa đổi 1 bit trong bản mã
