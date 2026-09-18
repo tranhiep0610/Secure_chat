@@ -30,7 +30,7 @@ router.post("/register", register);
 // Áp dụng giới hạn cho API đăng nhập
 router.post("/login", loginLimiter, login);
 
-router.post("/logout", logout);
+router.post("/logout", authMiddleware, logout);
 
 // Phải đăng nhập mới được xem thông tin bản thân
 router.get("/me", authMiddleware, getCurrentUser);

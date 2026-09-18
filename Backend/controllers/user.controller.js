@@ -1,11 +1,11 @@
-﻿const User = require("../models/User");
+const User = require("../models/User");
 
 // =========================
 // LẤY DANH SÁCH NGƯỜI DÙNG
 // =========================
 const getUsers = async (req, res) => {
     try {
-        const users = await User.find()
+        const users = await User.find({ _id: { $ne: req.session.userId } })
             .select("-passwordHash")
             .sort({ createdAt: -1 });
 
