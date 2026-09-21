@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Chat - Trò chuyện</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/chat.css">
+</head>
+<body>
+  <div class="chat-container">
+    <!-- Cột bên trái: Danh sách người dùng -->
+    <aside class="chat-sidebar">
+      <div class="chat-sidebar-header">
+        <h3>Danh sách người dùng</h3>
+      </div>
+      <ul id="user-list" class="chat-user-list">
+        <!-- JS sẽ tải danh sách người dùng vào đây -->
+      </ul>
+    </aside>
+
+    <!-- Cột bên phải: Khung trò chuyện -->
+    <main class="chat-main">
+      <header class="chat-header">
+        <h3 id="current-chat-title">Chọn người dùng để bắt đầu chat</h3>
+        
+        <!-- Thanh thiết lập Mã hóa & Khóa -->
+        <div class="chat-crypto-controls">
+          <label for="algo-select">Thuật toán:</label>
+          <select id="algo-select">
+            <option value="AES">AES-GCM</option>
+            <option value="DES">DES-CBC</option>
+          </select>
+
+          <label for="secret-key-input">Khóa bí mật:</label>
+          <input type="password" id="secret-key-input" placeholder="Nhập khóa..." />
+          
+          <input type="text" id="key-id-input" placeholder="Key ID (vd: k1)" style="width: 100px;" />
+        </div>
+      </header>
+
+      <!-- Vùng hiển thị tin nhắn -->
+      <section id="messages-container" class="chat-messages">
+        <div class="chat-empty-state">Chưa chọn cuộc trò chuyện nào.</div>
+      </section>
+
+      <!-- Ô nhập và gửi tin nhắn -->
+      <footer class="chat-input-area">
+        <form id="chat-form">
+          <input type="text" id="message-input" placeholder="Nhập tin nhắn..." autocomplete="off" />
+          <button type="submit" id="send-btn">Gửi</button>
+        </form>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Nối các tệp JS -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/socket.js"></script>
+  <script src="js/chat.js"></script>
+</body>
+</html>
