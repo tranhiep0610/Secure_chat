@@ -2,7 +2,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+
 *.log
 dist/
 coverage/
-# Những dòng này giúp bỏ qua thư viện cài trên máy, cấu hình môi trường và các tệp sinh ra khi chạy.
