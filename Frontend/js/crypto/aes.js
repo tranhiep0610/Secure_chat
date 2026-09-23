@@ -1,60 +1,93 @@
-/**
- * Mã hóa dữ liệu UTF-8 với AES-GCM và tạo Envelope
- */
-export async function encryptMessage(text, cryptoKey, keyId) {
-    if (!text || typeof text !== 'string') {
-        throw new Error('Dữ liệu đầu vào không hợp lệ');
-    }
+const cryptoApi = globalThis.crypto;
 
-    const encoder = new TextEncoder();
-    const data = encoder.encode(text);
-
-    // IV ngẫu nhiên 12-byte (96-bit) cho AES-GCM
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-
-    const ciphertextBuffer = await window.crypto.subtle.encrypt(
-        { name: "AES-GCM", iv: iv },
-        cryptoKey,
-        data
-    );
-
-    // Cấu trúc Envelope tuân thủ quy ước dự án
-    const envelope = {
-        keyId: keyId,
-        algorithm: "AES-GCM",
-        iv: Array.from(iv),
-        ciphertext: Array.from(new Uint8Array(ciphertextBuffer)),
-        timestamp: Date.now()
-    };
-
-    return JSON.stringify(envelope);
+if (!cryptoApi?.subtle || !cryptoApi?.getRandomValues) {
+  throw new Error('Web Crypto API không khả dụng trong môi trường hiện tại.');
 }
 
 /**
- * Giải mã Envelope và kiểm tra tính toàn vẹn
+ * Mã hóa UTF-8 bằng AES-GCM.
+ */
+export async function encryptMessage(text, cryptoKey, keyId) {
+  if (typeof text !== 'string' || text.length === 0) {
+    throw new Error('Dữ liệu đầu vào không hợp lệ.');
+  }
+
+  if (!cryptoKey) {
+    throw new Error('Khóa AES không hợp lệ.');
+  }
+
+  if (typeof keyId !== 'string' || keyId.length === 0) {
+    throw new Error('keyId không hợp lệ.');
+  }
+
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+
+  // AES-GCM khuyến nghị IV 12 byte (96 bit).
+  const iv = cryptoApi.getRandomValues(new Uint8Array(12));
+
+  const ciphertextBuffer = await cryptoApi.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    cryptoKey,
+    data
+  );
+
+  const envelope = {
+    keyId,
+    algorithm: 'AES-GCM',
+    iv: Array.from(iv),
+    ciphertext: Array.from(new Uint8Array(ciphertextBuffer)),
+    timestamp: Date.now()
+  };
+
+  return JSON.stringify(envelope);
+}
+
+/**
+ * Giải mã Envelope AES-GCM.
+ * Web Crypto tự kiểm tra authentication tag; nếu bản mã bị sửa sẽ reject.
  */
 export async function decryptMessage(envelopeJson, cryptoKey) {
-    let envelope;
-    try {
-        envelope = typeof envelopeJson === 'string' ? JSON.parse(envelopeJson) : envelopeJson;
-    } catch (e) {
-        throw new Error('Định dạng Envelope không hợp lệ');
-    }
+  if (!cryptoKey) {
+    throw new Error('Khóa AES không hợp lệ.');
+  }
 
+  let envelope;
+
+  try {
+    envelope =
+      typeof envelopeJson === 'string'
+        ? JSON.parse(envelopeJson)
+        : envelopeJson;
+  } catch {
+    throw new Error('Định dạng Envelope không hợp lệ.');
+  }
+
+  if (
+    !envelope ||
+    envelope.algorithm !== 'AES-GCM' ||
+    !Array.isArray(envelope.iv) ||
+    envelope.iv.length !== 12 ||
+    !Array.isArray(envelope.ciphertext) ||
+    envelope.ciphertext.length === 0
+  ) {
+    throw new Error('Envelope AES không hợp lệ.');
+  }
+
+  try {
     const iv = new Uint8Array(envelope.iv);
     const ciphertext = new Uint8Array(envelope.ciphertext);
 
-    try {
-        const decryptedBuffer = await window.crypto.subtle.decrypt(
-            { name: "AES-GCM", iv: iv },
-            cryptoKey,
-            ciphertext
-        );
+    const plaintextBuffer = await cryptoApi.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      cryptoKey,
+      ciphertext
+    );
 
-        const decoder = new TextDecoder();
-        return decoder.decode(decryptedBuffer);
-    } catch (error) {
-        // Tự động từ chối nếu ciphertext hoặc auth tag bị can thiệp
-        throw new Error('Giải mã thất bại: Dữ liệu bị chỉnh sửa hoặc sai khóa!');
-    }
+    return new TextDecoder().decode(plaintextBuffer);
+  } catch {
+    throw new Error(
+      'Giải mã AES thất bại: dữ liệu bị can thiệp hoặc sai khóa.'
+    );
+  }
 }

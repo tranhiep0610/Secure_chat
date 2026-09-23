@@ -1,46 +1,111 @@
 import { generateAESKey } from '../../Frontend/js/crypto/key-manager.js';
-import { encryptMessage, decryptMessage } from '../../Frontend/js/crypto/aes.js';
+import {
+  encryptMessage,
+  decryptMessage
+} from '../../Frontend/js/crypto/aes.js';
 
-export async function runAESTests() {
-    console.log("=== BẮT ĐẦU KIỂM TRA AES-GCM ===");
-
-    try {
-        // 1. Kiểm tra Round-trip
-        const { key, keyId } = await generateAESKey(256);
-        const originalText = "Xin chào! Mã hóa bảo mật AES-GCM 🔒";
-        
-        const envelopeJson = await encryptMessage(originalText, key, keyId);
-        const decryptedText = await decryptMessage(envelopeJson, key);
-
-        if (originalText === decryptedText) {
-            console.log("✅ [PASSED] Test 1: Round-trip mã hóa -> giải mã thành công.");
-        } else {
-            console.error("❌ [FAILED] Test 1: Văn bản giải mã không khớp dữ liệu ban đầu!");
-        }
-
-        // 2. Kiểm tra IV ngẫu nhiên (cùng tin nhắn mã hóa 2 lần phải ra kết quả khác nhau)
-        const envelopeJson2 = await encryptMessage(originalText, key, keyId);
-        if (envelopeJson !== envelopeJson2) {
-            console.log("✅ [PASSED] Test 2: Mã hóa 2 lần tạo ra IV & Ciphertext khác nhau.");
-        } else {
-            console.error("❌ [FAILED] Test 2: IV bị trùng lặp!");
-        }
-
-        // 3. Kiểm tra tính toàn vẹn (Chỉnh sửa ciphertext/tag phải bị từ chối)
-        const tamperedEnvelope = JSON.parse(envelopeJson);
-        tamperedEnvelope.ciphertext[0] ^= 1; // Sửa đổi 1 bit trong bản mã
-
-        try {
-            await decryptMessage(JSON.stringify(tamperedEnvelope), key);
-            console.error("❌ [FAILED] Test 3: Không phát hiện bản mã bị can thiệp!");
-        } catch (e) {
-            console.log("✅ [PASSED] Test 3: Đã từ chối bản mã bị chỉnh sửa.");
-        }
-
-    } catch (err) {
-        console.error("Lỗi trong quá trình chạy test:", err);
-    }
+function assert(condition, message) {
+  if (!condition) {
+    throw new Error(message);
+  }
 }
 
-// Chạy test
-runAESTests();
+function arraysEqual(a, b) {
+  return (
+    a.length === b.length &&
+    a.every((value, index) => value === b[index])
+  );
+}
+
+async function expectReject(action, message) {
+  let rejected = false;
+
+  try {
+    await action();
+  } catch {
+    rejected = true;
+  }
+
+  assert(rejected, message);
+}
+
+async function runAESTests() {
+  console.log('--- Bắt đầu kiểm tra AES-GCM ---');
+
+  const { key, keyId } = await generateAESKey(256);
+  const originalText =
+    'Xin chào! Đây là tin nhắn bảo mật AES 🔐';
+
+  // Test 1: round-trip.
+  const envelopeJson = await encryptMessage(
+    originalText,
+    key,
+    keyId
+  );
+
+  const decryptedText = await decryptMessage(
+    envelopeJson,
+    key
+  );
+
+  assert(
+    decryptedText === originalText,
+    'Test 1 thất bại: plaintext sau giải mã không khớp.'
+  );
+
+  console.log('✅ Test 1: Round-trip thành công.');
+
+  // Test 2: cùng plaintext + cùng khóa nhưng IV/ciphertext phải khác.
+  const envelopeJson2 = await encryptMessage(
+    originalText,
+    key,
+    keyId
+  );
+
+  const envelope1 = JSON.parse(envelopeJson);
+  const envelope2 = JSON.parse(envelopeJson2);
+
+  assert(
+    !arraysEqual(envelope1.iv, envelope2.iv),
+    'Test 2 thất bại: IV bị trùng.'
+  );
+
+  assert(
+    !arraysEqual(
+      envelope1.ciphertext,
+      envelope2.ciphertext
+    ),
+    'Test 2 thất bại: ciphertext giống nhau.'
+  );
+
+  console.log(
+    '✅ Test 2: Cùng dữ liệu nhưng IV và ciphertext khác nhau.'
+  );
+
+  // Test 3: AES-GCM phải từ chối ciphertext bị sửa.
+  const tamperedEnvelope = JSON.parse(envelopeJson);
+  tamperedEnvelope.ciphertext[0] ^= 1;
+
+  await expectReject(
+    () =>
+      decryptMessage(
+        JSON.stringify(tamperedEnvelope),
+        key
+      ),
+    'Test 3 thất bại: ciphertext AES bị sửa nhưng vẫn được chấp nhận.'
+  );
+
+  console.log(
+    '✅ Test 3: AES-GCM từ chối ciphertext bị chỉnh sửa.'
+  );
+
+  console.log('🎉 Tất cả test AES đều PASSED.');
+}
+
+runAESTests().catch(error => {
+  console.error('❌ AES TEST FAILED:', error);
+
+  if (typeof process !== 'undefined') {
+    process.exitCode = 1;
+  }
+});
