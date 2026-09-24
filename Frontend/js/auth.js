@@ -1,29 +1,11 @@
 // ========================================
-// SECURE CHAT - AUTH
-// Đăng ký / Đăng nhập với Backend thật
+// SECURE CHAT - AUTH PROTOTYPE
+// Phần giao diện đăng ký / đăng nhập
 // ========================================
 
 
 // ========================================
-// 1. CẤU HÌNH BACKEND
-// ========================================
-
-// Nếu frontend là:
-// http://127.0.0.1:5500
-//
-// thì backend sẽ là:
-// http://127.0.0.1:3000
-//
-// Dùng cùng hostname để session cookie hoạt động ổn định.
-
-const API_BASE_URL =
-    window.location.protocol === "file:"
-        ? "http://127.0.0.1:3000"
-        : `${window.location.protocol}//${window.location.hostname}:3000`;
-
-
-// ========================================
-// 2. LẤY CÁC PHẦN TỬ HTML
+// 1. LẤY CÁC PHẦN TỬ HTML
 // ========================================
 
 const loginForm =
@@ -37,80 +19,67 @@ const messageElement =
 
 
 // ========================================
-// 3. HIỂN THỊ THÔNG BÁO
+// 2. HIỂN THỊ THÔNG BÁO
 // ========================================
 
-function showMessage(message, type = "") {
+function showMessage(message, type) {
 
     if (!messageElement) {
         return;
     }
 
+
     messageElement.textContent =
         message;
 
-    messageElement.className =
-        "form-message";
 
-    if (type) {
-        messageElement.classList.add(type);
+    messageElement.className =
+        "form-message " + type;
+}
+
+
+// ========================================
+// 3. LẤY DANH SÁCH TÀI KHOẢN DEMO
+// ========================================
+
+function getUsers() {
+
+    const data =
+        localStorage.getItem(
+            "secureChatDemoUsers"
+        );
+
+
+    if (!data) {
+        return [];
+    }
+
+
+    try {
+
+        return JSON.parse(data);
+
+    }
+
+    catch (error) {
+
+        return [];
+
     }
 }
 
 
 // ========================================
-// 4. GỌI API
+// 4. LƯU DANH SÁCH TÀI KHOẢN DEMO
 // ========================================
 
-async function apiRequest(
-    path,
-    options = {}
-) {
+function saveUsers(users) {
 
-    const response =
-        await fetch(
-            `${API_BASE_URL}${path}`,
-            {
-                credentials: "include",
+    localStorage.setItem(
+        "secureChatDemoUsers",
+        JSON.stringify(users)
+    );
 
-                headers: {
-                    "Content-Type":
-                        "application/json",
-
-                    ...(options.headers || {})
-                },
-
-                ...options
-            }
-        );
-
-
-    let data = null;
-
-
-    try {
-
-        data =
-            await response.json();
-
-    } catch {
-
-        data = null;
-
-    }
-
-
-    if (!response.ok) {
-
-        throw new Error(
-            data?.message ||
-            `Yêu cầu thất bại (${response.status})`
-        );
-
-    }
-
-
-    return data;
 }
 
 
@@ -122,64 +91,26 @@ if (registerForm) {
 
     registerForm.addEventListener(
         "submit",
-
-        async function (event) {
+        function (event) {
 
             event.preventDefault();
 
 
-            // ----------------------------------------
-            // LẤY USERNAME
-            // ----------------------------------------
-
-            const usernameInput =
-                document.getElementById(
-                    "registerUsername"
-                );
-
-
             const username =
-                usernameInput
-                    ?.value
-                    .trim() || "";
+                document
+                    .getElementById(
+                        "registerUsername"
+                    )
+                    .value
+                    .trim();
 
-
-            // ----------------------------------------
-            // DISPLAY NAME
-            //
-            // Nếu HTML có ô registerDisplayName
-            // thì lấy từ đó.
-            //
-            // Nếu chưa có thì lấy username làm
-            // displayName để vẫn chạy được backend.
-            // ----------------------------------------
-
-            const displayNameInput =
-                document.getElementById(
-                    "registerDisplayName"
-                ) ||
-                document.getElementById(
-                    "displayName"
-                );
-
-
-            const displayName =
-                displayNameInput
-                    ?.value
-                    .trim() ||
-                username;
-
-
-            // ----------------------------------------
-            // PASSWORD
-            // ----------------------------------------
 
             const password =
                 document
                     .getElementById(
                         "registerPassword"
                     )
-                    ?.value || "";
+                    .value;
 
 
             const confirmPassword =
@@ -187,28 +118,14 @@ if (registerForm) {
                     .getElementById(
                         "confirmPassword"
                     )
-                    ?.value || "";
+                    .value;
 
 
-            // ========================================
-            // VALIDATE USERNAME
-            // Backend yêu cầu:
-            // 3 - 32 ký tự
-            // chữ, số, ., _, -
-            // ========================================
-
-            const usernameRegex =
-                /^[a-zA-Z0-9._-]{3,32}$/;
-
-
-            if (
-                !usernameRegex.test(
-                    username
-                )
-            ) {
+            // Kiểm tra tên đăng nhập
+            if (username.length < 3) {
 
                 showMessage(
-                    "Tên đăng nhập phải dài 3-32 ký tự và chỉ gồm chữ, số, dấu chấm, gạch dưới hoặc gạch ngang.",
+                    "Tên đăng nhập phải có ít nhất 3 ký tự.",
                     "error"
                 );
 
@@ -216,14 +133,11 @@ if (registerForm) {
             }
 
 
-            // ========================================
-            // VALIDATE DISPLAY NAME
-            // ========================================
-
-            if (!displayName) {
+            // Kiểm tra mật khẩu
+            if (password.length < 6) {
 
                 showMessage(
-                    "Tên hiển thị không được để trống.",
+                    "Mật khẩu phải có ít nhất 6 ký tự.",
                     "error"
                 );
 
@@ -231,57 +145,10 @@ if (registerForm) {
             }
 
 
+            // Kiểm tra xác nhận mật khẩu
             if (
-                displayName.length > 50
-            ) {
-
-                showMessage(
-                    "Tên hiển thị tối đa 50 ký tự.",
-                    "error"
-                );
-
-                return;
-            }
-
-
-            // ========================================
-            // VALIDATE PASSWORD
-            // Backend yêu cầu tối thiểu 8 ký tự
-            // ========================================
-
-            if (
-                password.length < 8
-            ) {
-
-                showMessage(
-                    "Mật khẩu phải có ít nhất 8 ký tự.",
-                    "error"
-                );
-
-                return;
-            }
-
-
-            if (
-                password.length > 128
-            ) {
-
-                showMessage(
-                    "Mật khẩu tối đa 128 ký tự.",
-                    "error"
-                );
-
-                return;
-            }
-
-
-            // ========================================
-            // CONFIRM PASSWORD
-            // ========================================
-
-            if (
-                confirmPassword &&
-                password !==
+                password
+                !==
                 confirmPassword
             ) {
 
@@ -294,79 +161,76 @@ if (registerForm) {
             }
 
 
-            try {
+            const users =
+                getUsers();
+
+
+            // Kiểm tra username đã tồn tại
+            const existedUser =
+                users.find(
+                    function (user) {
+
+                        return (
+                            user.username
+                                .toLowerCase()
+
+                            ===
+
+                            username
+                                .toLowerCase()
+                        );
+
+                    }
+                );
+
+
+            if (existedUser) {
 
                 showMessage(
-                    "Đang tạo tài khoản...",
-                    ""
-                );
-
-
-                // ====================================
-                // GỬI BACKEND
-                // ====================================
-
-                const data =
-                    await apiRequest(
-                        "/api/auth/register",
-                        {
-                            method: "POST",
-
-                            body:
-                                JSON.stringify({
-                                    username,
-                                    displayName,
-                                    password
-                                })
-                        }
-                    );
-
-
-                console.log(
-                    "Register:",
-                    data
-                );
-
-
-                showMessage(
-                    "Đăng ký thành công! Đang chuyển đến đăng nhập...",
-                    "success"
-                );
-
-
-                // ====================================
-                // CHUYỂN VỀ LOGIN
-                // ====================================
-
-                setTimeout(
-                    function () {
-
-                        window.location.href =
-                            "./index.html";
-
-                    },
-
-                    700
-                );
-
-
-            } catch (error) {
-
-                console.error(
-                    "Register error:",
-                    error
-                );
-
-
-                showMessage(
-                    error.message,
+                    "Tên đăng nhập đã tồn tại.",
                     "error"
                 );
 
+                return;
             }
+
+
+            // Tài khoản demo
+            const newUser = {
+
+                username: username,
+
+                password: password
+
+            };
+
+
+            users.push(newUser);
+
+
+            saveUsers(users);
+
+
+            showMessage(
+                "Đăng ký thành công! Đang chuyển đến đăng nhập...",
+                "success"
+            );
+
+
+            setTimeout(
+                function () {
+
+                    window.location.href =
+                        "./index.html";
+
+                },
+
+                900
+            );
 
         }
     );
+
 }
 
 
@@ -378,8 +242,7 @@ if (loginForm) {
 
     loginForm.addEventListener(
         "submit",
-
-        async function (event) {
+        function (event) {
 
             event.preventDefault();
 
@@ -389,8 +252,8 @@ if (loginForm) {
                     .getElementById(
                         "loginUsername"
                     )
-                    ?.value
-                    .trim() || "";
+                    .value
+                    .trim();
 
 
             const password =
@@ -398,17 +261,45 @@ if (loginForm) {
                     .getElementById(
                         "loginPassword"
                     )
-                    ?.value || "";
+                    .value;
 
 
-            // ========================================
-            // KIỂM TRA CƠ BẢN
-            // ========================================
+            const users =
+                getUsers();
 
-            if (!username) {
+
+            // Tìm tài khoản
+            const foundUser =
+                users.find(
+                    function (user) {
+
+                        return (
+
+                            user.username
+                                .toLowerCase()
+
+                            ===
+
+                            username
+                                .toLowerCase()
+
+                            &&
+
+                            user.password
+                            ===
+                            password
+
+                        );
+
+                    }
+                );
+
+
+            // Sai tài khoản
+            if (!foundUser) {
 
                 showMessage(
-                    "Vui lòng nhập tên đăng nhập.",
+                    "Tên đăng nhập hoặc mật khẩu không đúng.",
                     "error"
                 );
 
@@ -416,79 +307,26 @@ if (loginForm) {
             }
 
 
-            if (!password) {
-
-                showMessage(
-                    "Vui lòng nhập mật khẩu.",
-                    "error"
-                );
-
-                return;
-            }
+            // Đăng nhập thành công
+            showMessage(
+                "Đăng nhập thành công!",
+                "success"
+            );
 
 
-            try {
+            /*
+                Prototype hiện tại dừng ở đây.
 
-                showMessage(
-                    "Đang đăng nhập...",
-                    ""
-                );
+                Khi Công hoàn thành backend:
+                - gửi username/password lên API
+                - backend kiểm tra tài khoản
+                - nhận token / session
+                - sau đó chuyển sang trang chat
 
-
-                // ====================================
-                // LOGIN BACKEND
-                // ====================================
-
-                const data =
-                    await apiRequest(
-                        "/api/auth/login",
-                        {
-                            method: "POST",
-
-                            body:
-                                JSON.stringify({
-                                    username,
-                                    password
-                                })
-                        }
-                    );
-
-
-                console.log(
-                    "Login:",
-                    data
-                );
-
-
-                showMessage(
-                    "Đăng nhập thành công!",
-                    "success"
-                );
-
-
-                // ====================================
-                // CHUYỂN SANG CHAT
-                // ====================================
-
-                window.location.href =
-                    "./chat.html";
-
-
-            } catch (error) {
-
-                console.error(
-                    "Login error:",
-                    error
-                );
-
-
-                showMessage(
-                    error.message,
-                    "error"
-                );
-
-            }
+                Không xử lý backend trong phần này.
+            */
 
         }
     );
+
 }
