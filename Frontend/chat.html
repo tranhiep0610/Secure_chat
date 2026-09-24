@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Secure Chat</title>
+
+    <link
+        rel="stylesheet"
+        href="./css/chat.css"
+    >
+</head>
+
+
+<body class="chat-page">
+
+    <main class="chat-app">
+
+        <!-- =====================================================
+             SIDEBAR
+        ====================================================== -->
+        <aside class="chat-sidebar">
+
+            <!-- BRAND -->
+            <header class="chat-brand">
+
+                <div>
+                    <p class="chat-brand__eyebrow">
+                        AES • DES
+                    </p>
+
+                    <h1>
+                        Secure Chat
+                    </h1>
+                </div>
+
+                <button
+                    id="btnLogout"
+                    class="chat-icon-btn"
+                    type="button"
+                    title="Đăng xuất"
+                    aria-label="Đăng xuất"
+                >
+                    ↪
+                </button>
+
+            </header>
+
+
+            <!-- USER HIỆN TẠI -->
+            <section class="chat-profile">
+
+                <div
+                    id="meAvatar"
+                    class="chat-avatar"
+                >
+                    ?
+                </div>
+
+                <div class="chat-profile__text">
+
+                    <strong id="meDisplayName">
+                        Đang tải...
+                    </strong>
+
+                    <span id="connectionText">
+                        Đang kết nối...
+                    </span>
+
+                </div>
+
+                <span
+                    id="connectionDot"
+                    class="chat-status-dot"
+                    aria-hidden="true"
+                ></span>
+
+            </section>
+
+
+            <!-- SEARCH -->
+            <div class="chat-search">
+
+                <label
+                    for="userSearch"
+                    class="sr-only"
+                >
+                    Tìm người dùng
+                </label>
+
+                <input
+                    id="userSearch"
+                    type="search"
+                    placeholder="Tìm người dùng..."
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <!-- HEADING -->
+            <div class="chat-list-heading">
+
+                <span>
+                    Người dùng
+                </span>
+
+                <span id="userCount">
+                    0
+                </span>
+
+            </div>
+
+
+            <!-- USER LIST -->
+            <div
+                id="userList"
+                class="chat-user-list"
+                role="list"
+            >
+
+                <div class="chat-list-state">
+                    Đang tải danh sách...
+                </div>
+
+            </div>
+
+        </aside>
+
+
+
+        <!-- =====================================================
+             MAIN CHAT
+        ====================================================== -->
+        <section class="chat-main">
+
+
+            <!-- =================================================
+                 HEADER CHAT
+            ================================================== -->
+            <header class="chat-header">
+
+
+                <!-- USER ĐANG CHAT -->
+                <div class="chat-peer">
+
+                    <div
+                        id="peerAvatar"
+                        class="chat-avatar chat-avatar--peer"
+                    >
+                        ?
+                    </div>
+
+
+                    <div>
+
+                        <strong id="peerName">
+                            Chọn một người để bắt đầu chat
+                        </strong>
+
+                        <span id="peerStatus">
+                            Chưa có hội thoại
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- =================================================
+                     GÓC PHẢI: KEY + INFO
+                ================================================== -->
+                <div class="chat-header-actions">
+
+
+                    <!--
+                        Giữ select này để JS cũ vẫn hoạt động.
+                        Không hiển thị trực tiếp trên header.
+                    -->
+                    <select
+                        id="algorithmSelect"
+                        class="hidden-algorithm-select"
+                        aria-hidden="true"
+                        tabindex="-1"
+                    >
+
+                        <option value="AES-GCM">
+                            AES-GCM
+                        </option>
+
+                        <option value="DES-CBC">
+                            DES-CBC
+                        </option>
+
+                    </select>
+
+
+                    <!-- JS vẫn cần keyStatusText -->
+                    <span
+                        id="keyStatusText"
+                        class="sr-only"
+                    >
+                        Chưa có khóa
+                    </span>
+
+
+                    <!-- KEY -->
+                    <button
+                        id="btnOpenKey"
+                        class="header-action-btn"
+                        type="button"
+                        title="Quản lý mã hóa"
+                        aria-label="Quản lý mã hóa"
+                        disabled
+                    >
+                        🔑
+                    </button>
+
+
+                    <!-- INFO -->
+                    <button
+                        id="btnPeerInfo"
+                        class="header-action-btn info-button"
+                        type="button"
+                        title="Thông tin người dùng"
+                        aria-label="Thông tin người dùng"
+                        disabled
+                    >
+                        <span>!</span>
+                    </button>
+
+                </div>
+
+            </header>
+
+
+
+            <!-- =================================================
+                 NOTICE
+            ================================================== -->
+            <div
+                id="chatNotice"
+                class="chat-notice"
+                hidden
+            ></div>
+
+
+
+            <!-- =================================================
+                 MESSAGE AREA
+            ================================================== -->
+            <section
+                id="messagesPanel"
+                class="chat-messages"
+                aria-live="polite"
+            >
+
+
+                <!-- LOAD MORE -->
+                <button
+                    id="btnLoadMore"
+                    class="chat-load-more"
+                    type="button"
+                    hidden
+                >
+                    Tải thêm tin nhắn
+                </button>
+
+
+
+                <!-- EMPTY STATE -->
+                <div
+                    id="emptyState"
+                    class="chat-empty-state"
+                >
+
+                    <div>
+
+                        <div class="chat-empty-state__icon">
+                            🔐
+                        </div>
+
+                        <h2>
+                            Secure Chat
+                        </h2>
+
+                        <p>
+                            Chọn một người bên trái để bắt đầu trò chuyện.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- MESSAGES -->
+                <div
+                    id="messageList"
+                    class="chat-message-list"
+                ></div>
+
+            </section>
+
+
+
+            <!-- =====================================================
+                 COMPOSER
+            ====================================================== -->
+            <form
+                id="messageForm"
+                class="chat-composer"
+            >
+
+                <div class="chat-composer__box">
+
+
+                    <label
+                        for="messageInput"
+                        class="sr-only"
+                    >
+                        Tin nhắn
+                    </label>
+
+
+                    <textarea
+                        id="messageInput"
+                        rows="1"
+                        placeholder="Chọn một người để nhắn tin..."
+                        autocomplete="off"
+                        disabled
+                    ></textarea>
+
+
+
+                    <div class="chat-composer__footer">
+
+
+                        <!-- STICKER + FILE -->
+                        <div class="chat-extra-actions">
+
+                            <button
+                                id="btnSticker"
+                                class="chat-extra-btn"
+                                type="button"
+                                title="Sticker"
+                            >
+                                😊
+                            </button>
+
+
+                            <button
+                                id="btnFile"
+                                class="chat-extra-btn"
+                                type="button"
+                                title="Gửi tệp"
+                            >
+                                📎
+                            </button>
+
+
+                            <input
+                                id="fileInput"
+                                type="file"
+                                hidden
+                            >
+
+                        </div>
+
+
+                        <span id="draftHint">
+                            🔒 Tin nhắn được mã hóa trước khi gửi.
+                        </span>
+
+
+                        <button
+                            id="btnSend"
+                            class="chat-send-btn"
+                            type="submit"
+                            disabled
+                        >
+                            Gửi
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+
+
+            <!-- =================================================
+                 STICKER PANEL
+            ================================================== -->
+            <div
+                id="stickerPanel"
+                class="sticker-panel"
+                hidden
+            >
+
+                <button
+                    type="button"
+                    data-sticker="😂"
+                >
+                    😂
+                </button>
+
+                <button
+                    type="button"
+                    data-sticker="❤️"
+                >
+                    ❤️
+                </button>
+
+                <button
+                    type="button"
+                    data-sticker="👍"
+                >
+                    👍
+                </button>
+
+                <button
+                    type="button"
+                    data-sticker="😎"
+                >
+                    😎
+                </button>
+
+                <button
+                    type="button"
+                    data-sticker="😭"
+                >
+                    😭
+                </button>
+
+                <button
+                    type="button"
+                    data-sticker="🔥"
+                >
+                    🔥
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- =========================================================
+         MODAL QUẢN LÝ KHÓA
+    ========================================================== -->
+    <div
+        id="keyModal"
+        class="chat-modal"
+        hidden
+    >
+
+
+        <div
+            class="chat-modal__backdrop"
+            data-close-key-modal
+        ></div>
+
+
+
+        <section
+            class="chat-modal__dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="keyModalTitle"
+        >
+
+
+            <!-- HEADER -->
+            <div class="chat-modal__header">
+
+                <div>
+
+                    <p class="chat-modal__eyebrow">
+                        Secure Chat
+                    </p>
+
+                    <h2 id="keyModalTitle">
+                        Quản lý khóa mã hóa
+                    </h2>
+
+                </div>
+
+
+                <button
+                    id="btnCloseKey"
+                    class="chat-icon-btn"
+                    type="button"
+                    aria-label="Đóng"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+
+            <!-- WARNING -->
+            <div class="chat-key-warning">
+
+                Mỗi cuộc trò chuyện sử dụng một khóa riêng.
+
+                Hai tài khoản phải dùng cùng
+                <strong>Key ID</strong>
+                và cùng khóa để giải mã được tin nhắn.
+
+            </div>
+
+
+
+            <!-- =================================================
+                 ALGORITHM + KEY ID
+            ================================================== -->
+            <div class="chat-key-grid">
+
+
+                <!-- THUẬT TOÁN -->
+                <label>
+
+                    <span>
+                        Thuật toán
+                    </span>
+
+                    <select
+                        id="keyAlgorithm"
+                    >
+
+                        <option value="AES-GCM">
+                            AES-GCM
+                        </option>
+
+                        <option value="DES-CBC">
+                            DES-CBC
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+
+                <!-- KEY ID -->
+                <label>
+
+                    <span>
+                        Key ID
+                    </span>
+
+                    <input
+                        id="keyIdInput"
+                        type="text"
+                        placeholder="Ví dụ: key_aes_001"
+                        autocomplete="off"
+                    >
+
+                </label>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 SECRET KEY
+            ================================================== -->
+            <label class="chat-key-secret">
+
+                <span id="keySecretLabel">
+                    Khóa AES chia sẻ (Base64)
+                </span>
+
+
+                <textarea
+                    id="keySecretInput"
+                    rows="4"
+                    placeholder="Nhập khóa hoặc bấm Tạo khóa..."
+                    spellcheck="false"
+                    autocomplete="off"
+                ></textarea>
+
+            </label>
+
+
+
+            <!-- HELP -->
+            <p
+                id="keyHelpText"
+                class="chat-key-help"
+            >
+                Hai tài khoản phải dùng cùng Key ID
+                và cùng khóa để giải mã tin nhắn.
+            </p>
+
+
+
+            <!-- ERROR / STATUS -->
+            <p
+                id="keyModalError"
+                class="chat-form-error"
+                aria-live="polite"
+            ></p>
+
+
+
+            <!-- =================================================
+                 ACTIONS
+            ================================================== -->
+            <div class="chat-modal__actions">
+
+
+                <button
+                    id="btnDeleteKey"
+                    class="chat-btn-secondary chat-btn-danger"
+                    type="button"
+                >
+                    Xóa khóa
+                </button>
+
+
+                <button
+                    id="btnGenerateKey"
+                    class="chat-btn-secondary"
+                    type="button"
+                >
+                    Tạo khóa
+                </button>
+
+
+                <button
+                    id="btnCopyKey"
+                    class="chat-btn-secondary"
+                    type="button"
+                >
+                    Sao chép khóa
+                </button>
+
+
+                <button
+                    id="btnSaveKey"
+                    class="chat-btn-primary"
+                    type="button"
+                >
+                    Sử dụng khóa
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+
+    <!-- =========================================================
+         MODAL THÔNG TIN USER
+    ========================================================== -->
+    <div
+        id="peerInfoModal"
+        class="peer-info-modal"
+        hidden
+    >
+
+
+        <div
+            class="peer-info-backdrop"
+            data-close-peer-info
+        ></div>
+
+
+        <section
+            class="peer-info-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="peerInfoName"
+        >
+
+
+            <button
+                id="btnClosePeerInfo"
+                class="peer-info-close"
+                type="button"
+                aria-label="Đóng"
+            >
+                ×
+            </button>
+
+
+
+            <div
+                id="peerInfoAvatar"
+                class="peer-info-avatar"
+            >
+                ?
+            </div>
+
+
+            <h2 id="peerInfoName">
+                Người dùng
+            </h2>
+
+
+            <p id="peerInfoUsername">
+                @username
+            </p>
+
+
+
+            <div class="peer-info-row">
+
+                <span>
+                    Trạng thái
+                </span>
+
+                <strong id="peerInfoStatus">
+                    Đang hoạt động
+                </strong>
+
+            </div>
+
+
+
+            <div class="peer-info-row">
+
+                <span>
+                    Loại hội thoại
+                </span>
+
+                <strong>
+                    Chat 1–1
+                </strong>
+
+            </div>
+
+
+
+            <div class="peer-info-row">
+
+                <span>
+                    Mã hóa
+                </span>
+
+                <strong id="peerInfoEncryption">
+                    AES-GCM
+                </strong>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+
+    <!-- =========================================================
+         JS
+    ========================================================== -->
+    <script
+        type="module"
+        src="./js/chat.js"
+    ></script>
+
+</body>
+
+</html>
