@@ -1,7 +1,17 @@
+// const SOCKET_SERVER_URL =
+//   window.location.port === '3000'
+//     ? window.location.origin
+//     : `${window.location.protocol}//${window.location.hostname}:3000`;
+
+const IS_LOCAL =
+    ["127.0.0.1", "localhost"].includes(
+        window.location.hostname
+    );
+
 const SOCKET_SERVER_URL =
-  window.location.port === '3000'
-    ? window.location.origin
-    : `${window.location.protocol}//${window.location.hostname}:3000`;
+    IS_LOCAL && window.location.port !== "3000"
+        ? "http://127.0.0.1:3000"
+        : window.location.origin;
 
 let socket = null;
 

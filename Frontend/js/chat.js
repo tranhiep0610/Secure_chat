@@ -36,6 +36,20 @@ const ui = {
   connectionDot: $('#connectionDot'),
   btnLogout: $('#btnLogout'),
 
+    navMessages: $('#navMessages'),
+  navFriends: $('#navFriends'),
+  navRequests: $('#navRequests'),
+  navBlocked: $('#navBlocked'),
+
+  btnProfile: $('#btnProfile'),
+
+  featurePage: $('#featurePage'),
+  featureTitle: $('#featureTitle'),
+  featureDescription: $('#featureDescription'),
+  featureToolbar: $('#featureToolbar'),
+  featureSearch: $('#featureSearch'),
+  featureContent: $('#featureContent'),
+
   userSearch: $('#userSearch'),
   userCount: $('#userCount'),
   userList: $('#userList'),
@@ -78,8 +92,12 @@ peerInfoEncryption:
   messageList: $('#messageList'),
 
   messageForm: $('#messageForm'),
-  messageInput: $('#messageInput'),
-  btnSend: $('#btnSend'),
+messageInput: $('#messageInput'),
+
+btnEmoji: $('#btnEmoji'),
+emojiPicker: $('#emojiPicker'),
+
+btnSend: $('#btnSend'),
   draftHint: $('#draftHint'),
 
   keyModal: $('#keyModal'),
@@ -92,6 +110,7 @@ peerInfoEncryption:
   keyModalError: $('#keyModalError'),
   btnGenerateKey: $('#btnGenerateKey'),
   btnCopyKey: $('#btnCopyKey'),
+  btnDeleteKey: $('#btnDeleteKey'),
   btnSaveKey: $('#btnSaveKey')
 };
 
@@ -101,17 +120,32 @@ peerInfoEncryption:
 
 const state = {
   me: null,
+
+  // Tất cả tài khoản dùng cho tìm kiếm kết bạn
   users: [],
+
+  // Chỉ những người đã kết bạn
+  friends: [],
+
   conversations: [],
+
   activePeer: null,
   activeConversation: null,
+
   messages: [],
 
+  historyCursor: null,
+  hasMoreHistory: false,
+  loadingHistory: false,
+
   runtimeKeys: new Map(),
+
   activeKeyByConversation: new Map(),
+
   pending: new Map(),
 
-  demoMessagesByConversation: new Map()
+  demoMessagesByConversation:
+    new Map()
 };
 
 // =====================================================
@@ -601,7 +635,8 @@ async function apiRequest(
     await fetch(
       `${API_BASE_URL}${path}`,
       {
-        credentials: 'include',
+        credentials:
+          'include',
 
         headers: {
           'Content-Type':
@@ -614,33 +649,62 @@ async function apiRequest(
       }
     );
 
+
   let body = null;
+
 
   try {
     body =
       await response.json();
-  } catch {
+  }
+
+  catch {
     body = null;
   }
 
+
+  // Chỉ /api/auth/me mới được quyền
+  // xác định phiên đăng nhập đã hết.
+  //
+  // Các API khác 401 thì chỉ báo lỗi,
+  // KHÔNG tự đá user ra trang login.
   if (
     response.status === 401
   ) {
-    window.location.href =
-      './index.html';
+
+    if (
+      path ===
+      '/api/auth/me'
+    ) {
+
+      window.location.href =
+        './index.html';
+
+
+      throw new Error(
+        'Phiên đăng nhập đã hết.'
+      );
+    }
+
 
     throw new Error(
-      'Phiên đăng nhập đã hết.'
+      body?.message ||
+      'API từ chối quyền truy cập.'
     );
   }
 
-  if (!response.ok) {
+
+  if (
+    !response.ok
+  ) {
+
     throw new Error(
       body?.message ||
       body?.error ||
       `Yêu cầu thất bại (${response.status}).`
     );
   }
+
 
   return body;
 }
@@ -1157,44 +1221,48 @@ function hideEmptyState() {
   }
 }
 
-function renderUsers() {
-  if (
-    !ui.userList ||
-    !ui.userCount ||
-    !ui.userSearch
-  ) {
-    return;
-  }
+// =====================================================
+// RENDER CHAT LIST
+// CHỈ HIỆN NGƯỜI ĐÃ LÀ BẠN BÈ
+// =====================================================
 
+function renderUsers() {
   const query =
-    ui.userSearch
-      .value
+    ui.userSearch.value
       .trim()
       .toLowerCase();
 
-  const filtered =
-    state.users.filter(
-      user => {
 
-        if (
-          getId(user) ===
-          getId(state.me)
-        ) {
-          return false;
-        }
+  // =====================================
+  // LẤY USER TỪ DANH SÁCH FRIEND
+  // =====================================
+
+  const friendUsers =
+    state.friends
+      .map(
+        item =>
+          item?.user
+      )
+      .filter(Boolean);
+
+
+  // =====================================
+  // SEARCH
+  // =====================================
+
+  const filtered =
+    friendUsers.filter(
+      user => {
 
         if (!query) {
           return true;
         }
 
+
         const text =
-          `${
-            displayName(user)
-          } ${
-            user.username ||
-            ''
-          }`
+          `${displayName(user)} ${user.username || ''}`
             .toLowerCase();
+
 
         return text.includes(
           query
@@ -1202,13 +1270,20 @@ function renderUsers() {
       }
     );
 
+
   ui.userCount.textContent =
     String(
       filtered.length
     );
 
+
   ui.userList
     .replaceChildren();
+
+
+  // =====================================
+  // KHÔNG CÓ BẠN
+  // =====================================
 
   if (
     !filtered.length
@@ -1218,20 +1293,34 @@ function renderUsers() {
         'div'
       );
 
+
     empty.className =
       'chat-list-state';
 
-    empty.textContent =
-      query
-        ? 'Không tìm thấy người dùng.'
-        : 'Chưa có người dùng khác.';
+
+    if (query) {
+      empty.textContent =
+        'Không tìm thấy bạn bè.';
+    }
+
+    else {
+      empty.textContent =
+        'Chưa có bạn bè. Vào mục Bạn bè để kết bạn.';
+    }
+
 
     ui.userList.appendChild(
       empty
     );
 
+
     return;
   }
+
+
+  // =====================================
+  // RENDER FRIEND
+  // =====================================
 
   filtered.forEach(
     user => {
@@ -1239,26 +1328,36 @@ function renderUsers() {
       const peerId =
         getId(user);
 
+
       const conversation =
         getConversationForPeer(
           peerId
         );
+
+
+      // ===============================
+      // BUTTON
+      // ===============================
 
       const button =
         document.createElement(
           'button'
         );
 
+
       button.type =
         'button';
 
+
       button.className =
         'chat-user-item';
+
 
       button.setAttribute(
         'role',
         'listitem'
       );
+
 
       if (
         peerId ===
@@ -1271,48 +1370,72 @@ function renderUsers() {
         );
       }
 
+
+      // ===============================
+      // AVATAR
+      // ===============================
+
       const avatar =
         document.createElement(
           'div'
         );
 
+
       avatar.className =
         'chat-avatar';
 
+
       avatar.textContent =
-        initials(user);
+        initials(
+          user
+        );
+
+
+      // ===============================
+      // CONTENT
+      // ===============================
 
       const content =
         document.createElement(
           'div'
         );
 
+
       content.className =
         'chat-user-item__content';
+
 
       const top =
         document.createElement(
           'div'
         );
 
+
       top.className =
         'chat-user-item__top';
+
 
       const name =
         document.createElement(
           'strong'
         );
 
+
       name.textContent =
-        displayName(user);
+        displayName(
+          user
+        );
+
 
       const time =
         document.createElement(
           'span'
         );
 
+
       time.className =
         'chat-user-item__time';
+
 
       if (
         conversation?.updatedAt ||
@@ -1320,47 +1443,66 @@ function renderUsers() {
           ?.lastMessage
           ?.createdAt
       ) {
+
         time.textContent =
           formatTime(
-            conversation
-              .updatedAt ||
+            conversation.updatedAt ||
             conversation
               .lastMessage
               .createdAt
           );
       }
 
+
+      // ===============================
+      // PREVIEW
+      // ===============================
+
       const preview =
         document.createElement(
           'span'
         );
 
+
       preview.className =
         'chat-user-item__preview';
 
-      preview.textContent =
+
+      if (
         conversation
           ?.lastMessage
-          ? 'Có tin nhắn đã mã hóa'
-          : `@${
-              user.username ||
-              'user'
-            }`;
+      ) {
+        preview.textContent =
+          'Có tin nhắn đã mã hóa';
+      }
+
+      else {
+        preview.textContent =
+          `@${user.username || 'user'}`;
+      }
+
 
       top.append(
         name,
         time
       );
 
+
       content.append(
         top,
         preview
       );
 
+
       button.append(
         avatar,
         content
       );
+
+
+      // ===============================
+      // CLICK CHAT
+      // ===============================
 
       button.addEventListener(
         'click',
@@ -1368,27 +1510,26 @@ function renderUsers() {
 
           selectPeer(
             user
-          ).catch(
-            error => {
+          )
+            .catch(
+              error => {
 
-              console.error(
-                error
-              );
+                showNotice(
+                  error.message,
+                  'error'
+                );
 
-              showNotice(
-                error.message,
-                'error'
-              );
-
-            }
-          );
+              }
+            );
 
         }
       );
 
+
       ui.userList.appendChild(
         button
       );
+
     }
   );
 }
@@ -2205,7 +2346,17 @@ async function getMessagePlaintext(
 // MESSAGE RENDER
 // =====================================================
 
-async function renderMessages() {
+// =====================================================
+// RENDER MESSAGES
+// =====================================================
+
+// Dùng để tránh 2 lần render bất đồng bộ đè lên nhau.
+// Ví dụ: vừa gửi tin -> socket trả về -> render lần nữa.
+let messageRenderVersion = 0;
+
+async function renderMessages({
+  forceBottom = false
+} = {}) {
   if (
     !ui.messageList ||
     !ui.messagesPanel
@@ -2213,12 +2364,44 @@ async function renderMessages() {
     return;
   }
 
-  ui.messageList
-    .replaceChildren();
+  // Mỗi lần render tăng version.
+  const renderVersion =
+    ++messageRenderVersion;
+
+  const panel =
+    ui.messagesPanel;
+
+  // =====================================
+  // LƯU VỊ TRÍ SCROLL HIỆN TẠI
+  // =====================================
+
+  const previousTop =
+    panel.scrollTop;
+
+  const previousHeight =
+    panel.scrollHeight;
+
+  const distanceFromBottom =
+    previousHeight -
+    previousTop -
+    panel.clientHeight;
+
+  // Nếu đang cách đáy dưới 120px
+  // coi như user đang xem tin mới nhất.
+  const wasNearBottom =
+    distanceFromBottom < 120;
+
+
+  // =====================================
+  // CHƯA CHỌN HỘI THOẠI
+  // =====================================
 
   if (
     !state.activeConversation
   ) {
+    ui.messageList
+      .replaceChildren();
+
     setEmptyState(
       'Chưa chọn cuộc trò chuyện',
       'Chọn một người ở bên trái để bắt đầu.'
@@ -2227,9 +2410,17 @@ async function renderMessages() {
     return;
   }
 
+
+  // =====================================
+  // HỘI THOẠI CHƯA CÓ TIN
+  // =====================================
+
   if (
     !state.messages.length
   ) {
+    ui.messageList
+      .replaceChildren();
+
     setEmptyState(
       `Bắt đầu chat với ${displayName(
         state.activePeer
@@ -2240,20 +2431,74 @@ async function renderMessages() {
     return;
   }
 
+
   hideEmptyState();
 
-  for (
-    const message
-    of state.messages
+
+  // =====================================
+  // GIẢI MÃ TOÀN BỘ TRƯỚC
+  //
+  // KHÔNG xóa messageList ở đây.
+  // DOM cũ vẫn đứng nguyên nên không bị
+  // co lên rồi nảy xuống.
+  // =====================================
+
+  const preparedMessages =
+    await Promise.all(
+      state.messages.map(
+        async message => {
+          const plaintext =
+            await getMessagePlaintext(
+              message
+            );
+
+          return {
+            message,
+            plaintext
+          };
+        }
+      )
+    );
+
+
+  // Nếu trong lúc giải mã đã có
+  // render mới hơn chạy thì bỏ render cũ.
+  if (
+    renderVersion !==
+    messageRenderVersion
   ) {
+    return;
+  }
+
+
+  // =====================================
+  // TẠO TOÀN BỘ TIN NHẮN TRONG RAM
+  // =====================================
+
+  const fragment =
+    document
+      .createDocumentFragment();
+
+
+  for (
+    const item
+    of preparedMessages
+  ) {
+    const message =
+      item.message;
+
+    const plaintext =
+      item.plaintext;
+
+
     const own =
       message.senderId ===
       getId(state.me);
 
-    const plaintext =
-      await getMessagePlaintext(
-        message
-      );
+
+    // ===================================
+    // ROW
+    // ===================================
 
     const row =
       document.createElement(
@@ -2263,11 +2508,17 @@ async function renderMessages() {
     row.className =
       'chat-message-row';
 
+
     if (own) {
       row.classList.add(
         'is-own'
       );
     }
+
+
+    // ===================================
+    // BUBBLE
+    // ===================================
 
     const bubble =
       document.createElement(
@@ -2277,6 +2528,11 @@ async function renderMessages() {
     bubble.className =
       'chat-message';
 
+
+    // ===================================
+    // NỘI DUNG
+    // ===================================
+
     const text =
       document.createElement(
         'p'
@@ -2285,8 +2541,10 @@ async function renderMessages() {
     text.className =
       'chat-message__text';
 
+
     text.textContent =
       plaintext.text;
+
 
     if (
       plaintext.error
@@ -2296,6 +2554,11 @@ async function renderMessages() {
       );
     }
 
+
+    // ===================================
+    // META
+    // ===================================
+
     const meta =
       document.createElement(
         'div'
@@ -2304,6 +2567,8 @@ async function renderMessages() {
     meta.className =
       'chat-message__meta';
 
+
+    // Thuật toán
     const algorithm =
       document.createElement(
         'span'
@@ -2312,12 +2577,15 @@ async function renderMessages() {
     algorithm.className =
       'chat-message__algorithm';
 
+
     algorithm.textContent =
       message
         .envelope
         ?.algorithm ||
       'LOCAL';
 
+
+    // Thời gian
     const time =
       document.createElement(
         'span'
@@ -2328,10 +2596,16 @@ async function renderMessages() {
         message.createdAt
       );
 
+
     meta.append(
       algorithm,
       time
     );
+
+
+    // ===================================
+    // TRẠNG THÁI TIN NHẮN
+    // ===================================
 
     if (
       own &&
@@ -2345,19 +2619,24 @@ async function renderMessages() {
       status.className =
         'chat-message__status';
 
+
       if (
         message.localStatus ===
         'sending'
       ) {
         status.textContent =
           'Đang gửi...';
-      } else if (
+      }
+
+      else if (
         message.localStatus ===
         'saved'
       ) {
         status.textContent =
           'Đã lưu';
-      } else if (
+      }
+
+      else if (
         message.localStatus ===
         'error'
       ) {
@@ -2369,15 +2648,22 @@ async function renderMessages() {
         );
       }
 
+
       meta.appendChild(
         status
       );
     }
 
+
     bubble.append(
       text,
       meta
     );
+
+
+    // ===================================
+    // NÚT THỬ GỬI LẠI
+    // ===================================
 
     if (
       own &&
@@ -2399,45 +2685,102 @@ async function renderMessages() {
       retry.textContent =
         'Thử gửi lại';
 
+
       retry.addEventListener(
         'click',
         () => {
-
           retryMessage(
-            message
-              .clientMessageId
-          ).catch(
-            error => {
-
-              showNotice(
-                error.message,
-                'error'
-              );
-
-            }
-          );
-
+            message.clientMessageId
+          )
+            .catch(
+              error => {
+                showNotice(
+                  error.message,
+                  'error'
+                );
+              }
+            );
         }
       );
+
 
       bubble.appendChild(
         retry
       );
     }
 
+
     row.appendChild(
       bubble
     );
 
-    ui.messageList
-      .appendChild(
-        row
-      );
+
+    // Chưa đưa trực tiếp lên màn hình.
+    fragment.appendChild(
+      row
+    );
   }
 
-  ui.messagesPanel.scrollTop =
-    ui.messagesPanel.scrollHeight;
+
+  // =====================================
+  // KIỂM TRA LẦN CUỐI
+  // =====================================
+
+  if (
+    renderVersion !==
+    messageRenderVersion
+  ) {
+    return;
+  }
+
+
+  // =====================================
+  // THAY DOM CHỈ ĐÚNG 1 LẦN
+  // =====================================
+
+  ui.messageList
+    .replaceChildren(
+      fragment
+    );
+
+
+  // =====================================
+  // XỬ LÝ SCROLL
+  // =====================================
+
+  requestAnimationFrame(
+    () => {
+      // Nếu có render mới hơn rồi
+      // thì render cũ không được scroll.
+      if (
+        renderVersion !==
+        messageRenderVersion
+      ) {
+        return;
+      }
+
+
+      // Khi mở hội thoại hoặc vừa gửi tin
+      // thì xuống cuối.
+      if (
+        forceBottom ||
+        wasNearBottom
+      ) {
+        panel.scrollTop =
+          panel.scrollHeight;
+
+        return;
+      }
+
+
+      // Nếu user đang xem tin phía trên
+      // thì giữ nguyên vị trí.
+      panel.scrollTop =
+        previousTop;
+    }
+  );
 }
+
 
 // =====================================================
 // LOAD DATA
@@ -2454,15 +2797,18 @@ async function loadCurrentUser() {
     return;
   }
 
+
   const body =
     await apiRequest(
       '/api/auth/me'
     );
 
+
   state.me =
     body?.user ||
     body;
 }
+
 
 async function loadUsers() {
   if (DEMO_MODE) {
@@ -2472,10 +2818,12 @@ async function loadUsers() {
     return;
   }
 
+
   const body =
     await apiRequest(
       '/api/users'
     );
+
 
   state.users =
     unwrapList(
@@ -2487,6 +2835,41 @@ async function loadUsers() {
     );
 }
 
+// =====================================================
+// LOAD FRIENDS
+// =====================================================
+
+async function loadFriends() {
+  if (DEMO_MODE) {
+    state.friends =
+      DEMO_USERS.map(
+        user => ({
+          friendshipId:
+            `demo_friend_${getId(user)}`,
+
+          user
+        })
+      );
+
+    return;
+  }
+
+
+  const body =
+    await apiRequest(
+      '/api/friends'
+    );
+
+
+  state.friends =
+    Array.isArray(
+      body?.friends
+    )
+      ? body.friends
+      : [];
+}
+
+
 async function loadConversations() {
   if (DEMO_MODE) {
     state.conversations =
@@ -2495,10 +2878,12 @@ async function loadConversations() {
     return;
   }
 
+
   const body =
     await apiRequest(
       '/api/messages/conversations'
     );
+
 
   state.conversations =
     unwrapList(
@@ -2513,20 +2898,32 @@ async function loadConversations() {
       );
 }
 
+
+// =====================================================
+// TẠO / LẤY HỘI THOẠI
+// =====================================================
+
 async function ensureConversation(
   peer
 ) {
   const peerId =
     getId(peer);
 
+
   let conversation =
     getConversationForPeer(
       peerId
     );
 
+
   if (conversation) {
     return conversation;
   }
+
+
+  // =====================================
+  // DEMO
+  // =====================================
 
   if (DEMO_MODE) {
     conversation =
@@ -2546,12 +2943,19 @@ async function ensureConversation(
         }
       );
 
+
     state.conversations.push(
       conversation
     );
 
+
     return conversation;
   }
+
+
+  // =====================================
+  // REAL API
+  // =====================================
 
   const body =
     await apiRequest(
@@ -2569,75 +2973,105 @@ async function ensureConversation(
       }
     );
 
+
   conversation =
     normalizeConversation(
       body?.conversation ||
       body
     );
 
+
   state.conversations.push(
     conversation
   );
 
+
   return conversation;
 }
+
+
+// =====================================================
+// CHỌN NGƯỜI CHAT
+// =====================================================
 
 async function selectPeer(
   peer
 ) {
   hideNotice();
 
+
   state.activePeer =
     peer;
+
 
   state.activeConversation =
     null;
 
+
   state.messages =
     [];
 
+
   renderUsers();
+
   renderActivePeer();
+
   updateComposerState();
+
   updateKeyStatus();
+
 
   setEmptyState(
     'Đang mở hội thoại...',
     'Vui lòng chờ.'
   );
 
+
+  // =====================================
+  // LẤY / TẠO HỘI THOẠI
+  // =====================================
+
   const conversation =
     await ensureConversation(
       peer
     );
 
+
   state.activeConversation =
-  conversation;
+    conversation;
 
 
-// =====================================
-// TỰ LOAD KEY CỦA CONVERSATION
-// =====================================
+  // =====================================
+  // TỰ LOAD KEY CỦA CONVERSATION
+  // =====================================
+  //
+  // Load cả AES và DES.
+  // Tin lịch sử dùng thuật toán nào
+  // vẫn có thể tìm đúng key.
+  // =====================================
 
-// Load cả AES và DES để tin lịch sử
-// dùng thuật toán nào cũng giải mã được.
-
-await restoreKeyFromStorage(
-  'AES-GCM'
-);
-
-await restoreKeyFromStorage(
-  'DES-CBC'
-);
+  await restoreKeyFromStorage(
+    'AES-GCM'
+  );
 
 
-renderUsers();
+  await restoreKeyFromStorage(
+    'DES-CBC'
+  );
 
-renderActivePeer();
 
-updateComposerState();
+  renderUsers();
 
-updateKeyStatus();
+  renderActivePeer();
+
+  updateComposerState();
+
+  updateKeyStatus();
+
+
+  // =====================================
+  // JOIN SOCKET ROOM
+  // =====================================
 
   if (
     !DEMO_MODE &&
@@ -2649,7 +3083,9 @@ updateKeyStatus();
           conversation
         )
       );
-    } catch (error) {
+    }
+
+    catch (error) {
       console.warn(
         'Join conversation socket:',
         error.message
@@ -2657,8 +3093,18 @@ updateKeyStatus();
     }
   }
 
+
+  // =====================================
+  // LOAD HISTORY
+  // =====================================
+
   await loadHistory();
 }
+
+
+// =====================================================
+// LOAD HISTORY
+// =====================================================
 
 async function loadHistory() {
   if (
@@ -2667,13 +3113,20 @@ async function loadHistory() {
     return;
   }
 
+
   let messages = [];
+
+
+  // =====================================
+  // DEMO MODE
+  // =====================================
 
   if (DEMO_MODE) {
     const conversationId =
       getId(
         state.activeConversation
       );
+
 
     messages =
       state
@@ -2682,11 +3135,19 @@ async function loadHistory() {
           conversationId
         ) ||
       [];
-  } else {
+  }
+
+
+  // =====================================
+  // REAL BACKEND
+  // =====================================
+
+  else {
     const conversationId =
       getId(
         state.activeConversation
       );
+
 
     const body =
       await apiRequest(
@@ -2694,6 +3155,7 @@ async function loadHistory() {
           conversationId
         )}`
       );
+
 
     messages =
       unwrapList(
@@ -2705,12 +3167,20 @@ async function loadHistory() {
       );
   }
 
+
+  // =====================================
+  // MERGE
+  // =====================================
+
   state.messages =
     mergeMessages(
       [],
       messages
     );
 
+
+  // Hiện tại backend chưa dùng
+  // pagination history ở đây.
   if (
     ui.btnLoadMore
   ) {
@@ -2718,7 +3188,12 @@ async function loadHistory() {
       true;
   }
 
-  await renderMessages();
+
+  // Khi mới mở hội thoại:
+  // xuống cuối ngay.
+  await renderMessages({
+    forceBottom: true
+  });
 }
 
 // =====================================================
@@ -3432,6 +3907,102 @@ function openKeyModal() {
   ui.keyIdInput.focus();
 }
 
+function deleteCurrentKey() {
+
+    if (!state.activeConversation) {
+        ui.keyModalError.textContent =
+            'Chưa chọn cuộc trò chuyện.';
+        return;
+    }
+
+    const algorithm =
+        ui.algorithmSelect.value;
+
+    const lookupKey =
+        conversationKey(algorithm);
+
+    const keyId =
+        state.activeKeyByConversation.get(
+            lookupKey
+        );
+
+
+    if (!keyId) {
+        ui.keyModalError.textContent =
+            'Cuộc trò chuyện này chưa có khóa.';
+        return;
+    }
+
+
+    const ok = confirm(
+        'Xóa khóa hiện tại?\n\n' +
+        'Tin nhắn cũ dùng khóa này có thể không giải mã được.'
+    );
+
+    if (!ok) return;
+
+
+    // Xóa khóa khỏi bộ nhớ
+    state.activeKeyByConversation.delete(
+        lookupKey
+    );
+
+    state.runtimeKeys.delete(
+        keyId
+    );
+
+
+    // Nếu bản hiện tại có lưu localStorage
+    // thì xóa luôn các key liên quan nếu có
+    try {
+
+        const conversationId =
+            getId(
+                state.activeConversation
+            );
+
+        const possibleKeys = [
+            `securechat:key:${conversationId}:${algorithm}`,
+            `secure-chat:key:${conversationId}:${algorithm}`,
+            `chat:key:${conversationId}:${algorithm}`,
+            `key:${conversationId}:${algorithm}`
+        ];
+
+        for (
+            const storageKey of possibleKeys
+        ) {
+            localStorage.removeItem(
+                storageKey
+            );
+        }
+
+    } catch (error) {
+
+        console.warn(
+            'Không xóa được localStorage:',
+            error
+        );
+    }
+
+
+    // Xóa dữ liệu đang hiện trên modal
+    ui.keyIdInput.value = '';
+    ui.keySecretInput.value = '';
+
+    ui.keyModalError.textContent =
+        'Đã xóa khóa. Bây giờ có thể tạo hoặc nhập khóa mới.';
+
+
+    // Cập nhật trạng thái ngoài thanh chat
+    updateKeyStatus();
+
+
+    console.log(
+        '🗑️ Đã xóa key:',
+        keyId
+    );
+}
+
 function closeKeyModal() {
   ui.keyModal.hidden =
     true;
@@ -3604,7 +4175,3057 @@ function closePeerInfo() {
     true;
 }
 
+// =====================================================
+// CHUYỂN TRANG MENU TRÁI
+// =====================================================
+
+function setRailActive(
+  button
+) {
+  [
+    ui.navMessages,
+    ui.navFriends,
+    ui.navRequests,
+    ui.navBlocked
+  ]
+    .filter(Boolean)
+    .forEach(
+      item => {
+        item.classList.toggle(
+          'active',
+          item === button
+        );
+      }
+    );
+}
+
+
+function openChatPage() {
+  const app =
+    document.querySelector(
+      '.app-shell'
+    );
+
+  app?.classList.remove(
+    'feature-mode'
+  );
+
+
+  if (
+    ui.featurePage
+  ) {
+    ui.featurePage.hidden =
+      true;
+  }
+
+
+  setRailActive(
+    ui.navMessages
+  );
+}
+
+
+// =====================================================
+// TRANG BẠN BÈ - LOAD DỮ LIỆU THẬT TỪ API
+// =====================================================
+
+// =====================================================
+// FRIEND PAGE
+// =====================================================
+
+async function openFriendsPage() {
+  const toolbar =
+  document.querySelector(
+    '.feature-toolbar'
+  );
+
+if (toolbar) {
+  toolbar.style.display =
+    '';
+}
+
+  const app =
+    document.querySelector(
+      '.app-shell'
+    );
+
+  app?.classList.add(
+    'feature-mode'
+  );
+
+  ui.featurePage.hidden =
+    false;
+
+  ui.featureTitle.textContent =
+    'Danh sách bạn bè';
+
+  ui.featureDescription.textContent =
+    'Tìm người dùng, gửi lời mời và quản lý bạn bè';
+
+  setRailActive(
+    ui.navFriends
+  );
+
+
+  // Nếu chưa có danh sách user thì tải lại
+  if (
+    !Array.isArray(
+      state.users
+    ) ||
+    !state.users.length
+  ) {
+    try {
+      await loadUsers();
+    } catch (error) {
+      console.error(
+        'Load users:',
+        error
+      );
+    }
+  }
+
+
+  // Xóa nội dung search cũ
+  ui.featureSearch.value =
+    '';
+
+
+  // Render lần đầu
+  await renderFriendSearchPage();
+
+
+  // Khi gõ tìm kiếm
+  ui.featureSearch.oninput =
+    async () => {
+      await renderFriendSearchPage();
+    };
+}
+
+
+// =====================================================
+// RENDER TRANG BẠN BÈ + TÌM USER
+// =====================================================
+
+async function renderFriendSearchPage() {
+  const query =
+    ui.featureSearch.value
+      .trim()
+      .toLowerCase();
+
+
+  ui.featureContent.innerHTML = `
+    <div class="feature-loading">
+        Đang tải...
+    </div>
+  `;
+
+
+  try {
+
+    // =====================================
+    // DANH SÁCH BẠN BÈ HIỆN TẠI
+    // =====================================
+
+    const friendBody =
+      await apiRequest(
+        '/api/friends'
+      );
+
+
+    const friends =
+      Array.isArray(
+        friendBody?.friends
+      )
+        ? friendBody.friends
+        : [];
+
+
+    // =====================================
+    // NẾU CHƯA NHẬP SEARCH
+    // -> HIỆN DANH SÁCH BẠN
+    // =====================================
+
+    if (!query) {
+      renderFriendList(
+        friends
+      );
+
+      return;
+    }
+
+
+    // =====================================
+    // SEARCH TẤT CẢ USER
+    // =====================================
+
+    const myId =
+      getId(
+        state.me
+      );
+
+
+    const matchedUsers =
+      state.users.filter(
+        user => {
+
+          const userId =
+            getId(user);
+
+
+          // Không hiện chính mình
+          if (
+            userId ===
+            myId
+          ) {
+            return false;
+          }
+
+
+          const text =
+            `${displayName(user)} ${user.username || ''}`
+              .toLowerCase();
+
+
+          return text.includes(
+            query
+          );
+        }
+      );
+
+
+    // =====================================
+    // KHÔNG TÌM THẤY
+    // =====================================
+
+    if (
+      !matchedUsers.length
+    ) {
+      ui.featureContent.innerHTML = `
+        <div class="feature-empty">
+
+            <div class="feature-empty-icon">
+                🔎
+            </div>
+
+            <h2>
+                Không tìm thấy người dùng
+            </h2>
+
+            <p>
+                Không có tài khoản nào khớp với
+                "${escapeHtml(query)}".
+            </p>
+
+        </div>
+      `;
+
+      return;
+    }
+
+
+    // =====================================
+    // RENDER KẾT QUẢ SEARCH
+    // =====================================
+
+    ui.featureContent
+      .replaceChildren();
+
+
+    const list =
+      document.createElement(
+        'div'
+      );
+
+
+    list.className =
+      'feature-user-list';
+
+
+    for (
+      const user
+      of matchedUsers
+    ) {
+
+      const row =
+        document.createElement(
+          'div'
+        );
+
+
+      row.className =
+        'feature-user';
+
+
+      // AVATAR
+      const avatar =
+        document.createElement(
+          'div'
+        );
+
+
+      avatar.className =
+        'feature-user-avatar';
+
+
+      avatar.textContent =
+        initials(
+          user
+        );
+
+
+      // INFO
+      const info =
+        document.createElement(
+          'div'
+        );
+
+
+      info.className =
+        'feature-user-info';
+
+
+      const name =
+        document.createElement(
+          'strong'
+        );
+
+
+      name.textContent =
+        displayName(
+          user
+        );
+
+
+      const username =
+        document.createElement(
+          'span'
+        );
+
+
+      username.textContent =
+        `@${user.username || 'user'}`;
+
+
+      info.append(
+        name,
+        username
+      );
+
+
+      // ACTION
+      const action =
+        document.createElement(
+          'div'
+        );
+
+
+      action.className =
+        'feature-user-actions';
+
+
+      const userId =
+        getId(
+          user
+        );
+
+
+      // =================================
+      // KIỂM TRA TRẠNG THÁI KẾT BẠN
+      // =================================
+
+      let relation = {
+        status: 'none',
+        direction: null,
+        friendshipId: null
+      };
+
+
+      try {
+
+        relation =
+          await apiRequest(
+            `/api/friends/status/${encodeURIComponent(
+              userId
+            )}`
+          );
+
+      }
+
+      catch (error) {
+
+        console.warn(
+          'Friend status:',
+          error.message
+        );
+
+      }
+
+
+      // =================================
+      // ĐÃ LÀ BẠN
+      // =================================
+
+      if (
+        relation.status ===
+        'accepted'
+      ) {
+
+        const badge =
+          document.createElement(
+            'span'
+          );
+
+
+        badge.className =
+          'friend-status is-friend';
+
+
+        badge.textContent =
+          '✓ Bạn bè';
+
+
+        const chatButton =
+          document.createElement(
+            'button'
+          );
+
+
+        chatButton.type =
+          'button';
+
+
+        chatButton.className =
+          'feature-chat-btn';
+
+
+        chatButton.textContent =
+          'Nhắn tin';
+
+
+        chatButton.onclick =
+          async () => {
+
+            openChatPage();
+
+            await selectPeer(
+              user
+            );
+
+          };
+
+
+        action.append(
+          badge,
+          chatButton
+        );
+
+      }
+
+
+      // =================================
+      // MÌNH ĐÃ GỬI LỜI MỜI
+      // =================================
+
+      else if (
+        relation.status ===
+          'pending' &&
+        relation.direction ===
+          'outgoing'
+      ) {
+
+        const badge =
+          document.createElement(
+            'span'
+          );
+
+
+        badge.className =
+          'friend-status pending';
+
+
+        badge.textContent =
+          'Đã gửi lời mời';
+
+
+        const cancelButton =
+          document.createElement(
+            'button'
+          );
+
+
+        cancelButton.type =
+          'button';
+
+
+        cancelButton.className =
+          'friend-cancel-btn';
+
+
+        cancelButton.textContent =
+          'Hủy';
+
+
+        cancelButton.onclick =
+          async () => {
+
+            try {
+
+              cancelButton.disabled =
+                true;
+
+
+              await apiRequest(
+                `/api/friends/${encodeURIComponent(
+                  relation.friendshipId
+                )}/cancel`,
+                {
+                  method:
+                    'DELETE'
+                }
+              );
+
+
+              await renderFriendSearchPage();
+
+            }
+
+            catch (error) {
+
+              alert(
+                error.message
+              );
+
+
+              cancelButton.disabled =
+                false;
+
+            }
+
+          };
+
+
+        action.append(
+          badge,
+          cancelButton
+        );
+
+      }
+
+
+      // =================================
+      // NGƯỜI KIA ĐÃ GỬI CHO MÌNH
+      // =================================
+
+      else if (
+        relation.status ===
+          'pending' &&
+        relation.direction ===
+          'incoming'
+      ) {
+
+        const badge =
+          document.createElement(
+            'span'
+          );
+
+
+        badge.className =
+          'friend-status incoming';
+
+
+        badge.textContent =
+          'Đang chờ bạn xác nhận';
+
+
+        action.appendChild(
+          badge
+        );
+
+      }
+
+
+      // =================================
+      // CHƯA CÓ QUAN HỆ
+      // =================================
+
+      else {
+
+        const addButton =
+          document.createElement(
+            'button'
+          );
+
+
+        addButton.type =
+          'button';
+
+
+        addButton.className =
+          'friend-add-btn';
+
+
+        addButton.textContent =
+          '+ Kết bạn';
+
+
+        addButton.onclick =
+          async () => {
+
+            try {
+
+              addButton.disabled =
+                true;
+
+
+              addButton.textContent =
+                'Đang gửi...';
+
+
+              await apiRequest(
+                '/api/friends/request',
+                {
+                  method:
+                    'POST',
+
+                  body:
+                    JSON.stringify(
+                      {
+                        targetUserId:
+                          userId
+                      }
+                    )
+                }
+              );
+
+
+              addButton.textContent =
+                'Đã gửi';
+
+
+              await renderFriendSearchPage();
+
+            }
+
+            catch (error) {
+
+              alert(
+                error.message
+              );
+
+
+              addButton.disabled =
+                false;
+
+
+              addButton.textContent =
+                '+ Kết bạn';
+
+            }
+
+          };
+
+
+        action.appendChild(
+          addButton
+        );
+
+      }
+
+
+      row.append(
+        avatar,
+        info,
+        action
+      );
+
+
+      list.appendChild(
+        row
+      );
+
+    }
+
+
+    ui.featureContent
+      .appendChild(
+        list
+      );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      'Friend page:',
+      error
+    );
+
+
+    ui.featureContent.innerHTML = `
+      <div class="feature-empty">
+
+          <div class="feature-empty-icon">
+              ⚠
+          </div>
+
+          <h2>
+              Không tải được dữ liệu
+          </h2>
+
+          <p>
+              ${escapeHtml(
+                error.message
+              )}
+          </p>
+
+      </div>
+    `;
+
+  }
+}
+
+
+// =====================================================
+// RENDER DANH SÁCH BẠN BÈ
+// =====================================================
+
+function renderFriendList(
+  friends
+) {
+  ui.featureContent
+    .replaceChildren();
+
+
+  if (
+    !friends.length
+  ) {
+    ui.featureContent.innerHTML = `
+      <div class="feature-empty">
+
+        <div class="feature-empty-icon">
+          👥
+        </div>
+
+        <h2>
+          Chưa có bạn bè
+        </h2>
+
+        <p>
+          Nhập tên người dùng vào ô tìm kiếm
+          phía trên để gửi lời mời kết bạn.
+        </p>
+
+      </div>
+    `;
+
+    return;
+  }
+
+
+  const list =
+    document.createElement(
+      'div'
+    );
+
+
+  list.className =
+    'feature-user-list';
+
+
+  for (
+    const item
+    of friends
+  ) {
+    const user =
+      item.user;
+
+
+    if (!user) {
+      continue;
+    }
+
+
+    const row =
+      document.createElement(
+        'div'
+      );
+
+
+    row.className =
+      'feature-user';
+
+
+    const avatar =
+      document.createElement(
+        'div'
+      );
+
+
+    avatar.className =
+      'feature-user-avatar';
+
+
+    avatar.textContent =
+      initials(
+        user
+      );
+
+
+    const info =
+      document.createElement(
+        'div'
+      );
+
+
+    info.className =
+      'feature-user-info';
+
+
+    const name =
+      document.createElement(
+        'strong'
+      );
+
+
+    name.textContent =
+      displayName(
+        user
+      );
+
+
+    const username =
+      document.createElement(
+        'span'
+      );
+
+
+    username.textContent =
+      `@${user.username || 'user'}`;
+
+
+    info.append(
+      name,
+      username
+    );
+
+
+    const actions =
+      document.createElement(
+        'div'
+      );
+
+
+    actions.className =
+      'feature-user-actions';
+
+
+    // ==============================
+    // NHẮN TIN
+    // ==============================
+
+    const chatButton =
+      document.createElement(
+        'button'
+      );
+
+
+    chatButton.type =
+      'button';
+
+
+    chatButton.className =
+      'feature-chat-btn';
+
+
+    chatButton.textContent =
+      'Nhắn tin';
+
+
+    chatButton.onclick =
+      async () => {
+        openChatPage();
+
+        await selectPeer(
+          user
+        );
+      };
+
+
+    // ==============================
+    // HỦY KẾT BẠN
+    // ==============================
+
+    const removeButton =
+      document.createElement(
+        'button'
+      );
+
+
+    removeButton.type =
+      'button';
+
+
+    removeButton.className =
+      'feature-remove-btn';
+
+
+    removeButton.textContent =
+      'Hủy kết bạn';
+
+
+    removeButton.onclick =
+      async () => {
+        const ok =
+          confirm(
+            `Hủy kết bạn với ${displayName(
+              user
+            )}?`
+          );
+
+
+        if (!ok) {
+          return;
+        }
+
+
+        try {
+          removeButton.disabled =
+            true;
+
+
+          await apiRequest(
+            `/api/friends/${encodeURIComponent(
+              item.friendshipId
+            )}`,
+            {
+              method:
+                'DELETE'
+            }
+          );
+
+
+          await loadFriends();
+
+          renderUsers();
+
+          await openFriendsPage();
+        }
+
+        catch (error) {
+          alert(
+            error.message
+          );
+
+
+          removeButton.disabled =
+            false;
+        }
+      };
+
+
+    // ==============================
+    // CHẶN
+    // ==============================
+
+    const blockButton =
+      document.createElement(
+        'button'
+      );
+
+
+    blockButton.type =
+      'button';
+
+
+    blockButton.className =
+      'feature-block-btn';
+
+
+    blockButton.textContent =
+      'Chặn';
+
+
+    blockButton.onclick =
+      async () => {
+        const ok =
+          confirm(
+            `Chặn ${displayName(
+              user
+            )}? Hai tài khoản sẽ bị hủy kết bạn.`
+          );
+
+
+        if (!ok) {
+          return;
+        }
+
+
+        try {
+          blockButton.disabled =
+            true;
+
+
+          await apiRequest(
+            '/api/blocks',
+            {
+              method:
+                'POST',
+
+              body:
+                JSON.stringify({
+                  targetUserId:
+                    getId(user)
+                })
+            }
+          );
+
+
+          await loadFriends();
+
+          renderUsers();
+
+          await openFriendsPage();
+        }
+
+        catch (error) {
+          alert(
+            error.message
+          );
+
+
+          blockButton.disabled =
+            false;
+        }
+      };
+
+
+    actions.append(
+      chatButton,
+      removeButton,
+      blockButton
+    );
+
+
+    row.append(
+      avatar,
+      info,
+      actions
+    );
+
+
+    list.appendChild(
+      row
+    );
+  }
+
+
+  ui.featureContent
+    .appendChild(
+      list
+    );
+}
+
+
+// =====================================================
+// ESCAPE HTML
+// =====================================================
+
+function escapeHtml(
+  value
+) {
+  return String(
+    value ?? ''
+  )
+    .replaceAll(
+      '&',
+      '&amp;'
+    )
+    .replaceAll(
+      '<',
+      '&lt;'
+    )
+    .replaceAll(
+      '>',
+      '&gt;'
+    )
+    .replaceAll(
+      '"',
+      '&quot;'
+    )
+    .replaceAll(
+      "'",
+      '&#039;'
+    );
+}
+
+
+// =====================================================
+// TRANG LỜI MỜI KẾT BẠN
+// =====================================================
+
+async function openRequestsPage() {
+  const app =
+    document.querySelector(
+      '.app-shell'
+    );
+
+  app?.classList.add(
+    'feature-mode'
+  );
+
+
+  ui.featurePage.hidden =
+    false;
+
+
+  ui.featureTitle.textContent =
+    'Lời mời kết bạn';
+
+
+  ui.featureDescription.textContent =
+    'Xem lời mời nhận được và lời mời đã gửi';
+
+
+  setRailActive(
+    ui.navRequests
+  );
+
+
+  // Không cần ô search ở trang này
+  const toolbar =
+    document.querySelector(
+      '.feature-toolbar'
+    );
+
+  if (toolbar) {
+    toolbar.style.display =
+      'none';
+  }
+
+
+  // Loading
+  ui.featureContent.innerHTML = `
+    <div class="feature-empty">
+
+      <div class="feature-empty-icon">
+        ⏳
+      </div>
+
+      <h2>
+        Đang tải lời mời...
+      </h2>
+
+    </div>
+  `;
+
+
+  try {
+
+    // =====================================
+    // LOAD 2 LOẠI LỜI MỜI
+    // =====================================
+
+    const [
+      incomingBody,
+      outgoingBody
+    ] =
+      await Promise.all([
+        apiRequest(
+          '/api/friends/requests/incoming'
+        ),
+
+        apiRequest(
+          '/api/friends/requests/outgoing'
+        )
+      ]);
+
+
+    const incoming =
+      Array.isArray(
+        incomingBody?.requests
+      )
+        ? incomingBody.requests
+        : [];
+
+
+    const outgoing =
+      Array.isArray(
+        outgoingBody?.requests
+      )
+        ? outgoingBody.requests
+        : [];
+
+
+    ui.featureContent
+      .replaceChildren();
+
+
+    const wrapper =
+      document.createElement(
+        'div'
+      );
+
+
+    wrapper.className =
+      'request-page';
+
+
+    // =====================================
+    // LỜI MỜI NHẬN ĐƯỢC
+    // =====================================
+
+    const incomingSection =
+      document.createElement(
+        'section'
+      );
+
+
+    incomingSection.className =
+      'request-section';
+
+
+    const incomingTitle =
+      document.createElement(
+        'h2'
+      );
+
+
+    incomingTitle.textContent =
+      `Lời mời nhận được (${incoming.length})`;
+
+
+    incomingSection.appendChild(
+      incomingTitle
+    );
+
+
+    if (!incoming.length) {
+
+      const empty =
+        document.createElement(
+          'div'
+        );
+
+
+      empty.className =
+        'request-empty';
+
+
+      empty.textContent =
+        'Chưa có lời mời kết bạn mới.';
+
+
+      incomingSection.appendChild(
+        empty
+      );
+
+    }
+
+    else {
+
+      for (
+        const request
+        of incoming
+      ) {
+
+        const user =
+          request.sender;
+
+
+        const card =
+          document.createElement(
+            'div'
+          );
+
+
+        card.className =
+          'request-card';
+
+
+        // AVATAR
+        const avatar =
+          document.createElement(
+            'div'
+          );
+
+
+        avatar.className =
+          'feature-user-avatar';
+
+
+        avatar.textContent =
+          initials(
+            user
+          );
+
+
+        // INFO
+        const info =
+          document.createElement(
+            'div'
+          );
+
+
+        info.className =
+          'request-info';
+
+
+        const name =
+          document.createElement(
+            'strong'
+          );
+
+
+        name.textContent =
+          displayName(
+            user
+          );
+
+
+        const username =
+          document.createElement(
+            'span'
+          );
+
+
+        username.textContent =
+          `@${user?.username || 'user'}`;
+
+
+        info.append(
+          name,
+          username
+        );
+
+
+        // ACTIONS
+        const actions =
+          document.createElement(
+            'div'
+          );
+
+
+        actions.className =
+          'request-actions';
+
+
+        // CHẤP NHẬN
+        const acceptButton =
+          document.createElement(
+            'button'
+          );
+
+
+        acceptButton.type =
+          'button';
+
+
+        acceptButton.className =
+          'request-accept';
+
+
+        acceptButton.textContent =
+          'Chấp nhận';
+
+
+        acceptButton.onclick =
+          async () => {
+
+            try {
+
+              acceptButton.disabled =
+                true;
+
+
+              acceptButton.textContent =
+                'Đang xử lý...';
+
+
+              await apiRequest(
+                `/api/friends/${encodeURIComponent(
+                  request.friendshipId
+                )}/accept`,
+                {
+                  method:
+                    'POST'
+                }
+              );
+
+
+              await openRequestsPage();
+
+            }
+
+            catch (error) {
+
+              alert(
+                error.message
+              );
+
+
+              acceptButton.disabled =
+                false;
+
+
+              acceptButton.textContent =
+                'Chấp nhận';
+
+            }
+
+          };
+
+
+        // TỪ CHỐI
+        const rejectButton =
+          document.createElement(
+            'button'
+          );
+
+
+        rejectButton.type =
+          'button';
+
+
+        rejectButton.className =
+          'request-reject';
+
+
+        rejectButton.textContent =
+          'Từ chối';
+
+
+        rejectButton.onclick =
+          async () => {
+
+            try {
+
+              rejectButton.disabled =
+                true;
+
+
+              await apiRequest(
+                `/api/friends/${encodeURIComponent(
+                  request.friendshipId
+                )}/reject`,
+                {
+                  method:
+                    'POST'
+                }
+              );
+
+
+              await openRequestsPage();
+
+            }
+
+            catch (error) {
+
+              alert(
+                error.message
+              );
+
+
+              rejectButton.disabled =
+                false;
+
+            }
+
+          };
+
+
+        actions.append(
+          acceptButton,
+          rejectButton
+        );
+
+
+        card.append(
+          avatar,
+          info,
+          actions
+        );
+
+
+        incomingSection.appendChild(
+          card
+        );
+
+      }
+
+    }
+
+
+    // =====================================
+    // LỜI MỜI ĐÃ GỬI
+    // =====================================
+
+    const outgoingSection =
+      document.createElement(
+        'section'
+      );
+
+
+    outgoingSection.className =
+      'request-section';
+
+
+    const outgoingTitle =
+      document.createElement(
+        'h2'
+      );
+
+
+    outgoingTitle.textContent =
+      `Đã gửi (${outgoing.length})`;
+
+
+    outgoingSection.appendChild(
+      outgoingTitle
+    );
+
+
+    if (!outgoing.length) {
+
+      const empty =
+        document.createElement(
+          'div'
+        );
+
+
+      empty.className =
+        'request-empty';
+
+
+      empty.textContent =
+        'Bạn chưa gửi lời mời nào.';
+
+
+      outgoingSection.appendChild(
+        empty
+      );
+
+    }
+
+    else {
+
+      for (
+        const request
+        of outgoing
+      ) {
+
+        const user =
+          request.receiver;
+
+
+        const card =
+          document.createElement(
+            'div'
+          );
+
+
+        card.className =
+          'request-card';
+
+
+        const avatar =
+          document.createElement(
+            'div'
+          );
+
+
+        avatar.className =
+          'feature-user-avatar';
+
+
+        avatar.textContent =
+          initials(
+            user
+          );
+
+
+        const info =
+          document.createElement(
+            'div'
+          );
+
+
+        info.className =
+          'request-info';
+
+
+        const name =
+          document.createElement(
+            'strong'
+          );
+
+
+        name.textContent =
+          displayName(
+            user
+          );
+
+
+        const username =
+          document.createElement(
+            'span'
+          );
+
+
+        username.textContent =
+          `@${user?.username || 'user'}`;
+
+
+        info.append(
+          name,
+          username
+        );
+
+
+        const actions =
+          document.createElement(
+            'div'
+          );
+
+
+        actions.className =
+          'request-actions';
+
+
+        const waiting =
+          document.createElement(
+            'span'
+          );
+
+
+        waiting.className =
+          'friend-status pending';
+
+
+        waiting.textContent =
+          'Đang chờ';
+
+
+        const cancelButton =
+          document.createElement(
+            'button'
+          );
+
+
+        cancelButton.type =
+          'button';
+
+
+        cancelButton.className =
+          'request-reject';
+
+
+        cancelButton.textContent =
+          'Hủy lời mời';
+
+
+        cancelButton.onclick =
+          async () => {
+
+            try {
+
+              cancelButton.disabled =
+                true;
+
+
+              await apiRequest(
+                `/api/friends/${encodeURIComponent(
+                  request.friendshipId
+                )}/cancel`,
+                {
+                  method:
+                    'DELETE'
+                }
+              );
+
+
+              await openRequestsPage();
+
+            }
+
+            catch (error) {
+
+              alert(
+                error.message
+              );
+
+
+              cancelButton.disabled =
+                false;
+
+            }
+
+          };
+
+
+        actions.append(
+          waiting,
+          cancelButton
+        );
+
+
+        card.append(
+          avatar,
+          info,
+          actions
+        );
+
+
+        outgoingSection.appendChild(
+          card
+        );
+
+      }
+
+    }
+
+
+    wrapper.append(
+      incomingSection,
+      outgoingSection
+    );
+
+
+    ui.featureContent
+      .appendChild(
+        wrapper
+      );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      'Load requests:',
+      error
+    );
+
+
+    ui.featureContent.innerHTML = `
+      <div class="feature-empty">
+
+        <div class="feature-empty-icon">
+          ⚠
+        </div>
+
+        <h2>
+          Không tải được lời mời
+        </h2>
+
+        <p>
+          ${escapeHtml(
+            error.message
+          )}
+        </p>
+
+      </div>
+    `;
+
+  }
+}
+
+async function openBlockedPage() {
+  const app =
+    document.querySelector(
+      '.app-shell'
+    );
+
+
+  app?.classList.add(
+    'feature-mode'
+  );
+
+
+  ui.featurePage.hidden =
+    false;
+
+
+  ui.featureTitle.textContent =
+    'Danh sách đã chặn';
+
+
+  ui.featureDescription.textContent =
+    'Quản lý những tài khoản bạn không muốn tương tác';
+
+
+  setRailActive(
+    ui.navBlocked
+  );
+
+
+  const toolbar =
+    document.querySelector(
+      '.feature-toolbar'
+    );
+
+
+  if (toolbar) {
+    toolbar.style.display =
+      'none';
+  }
+
+
+  ui.featureContent.innerHTML = `
+    <div class="feature-empty">
+
+      <div class="feature-empty-icon">
+        ⏳
+      </div>
+
+      <h2>
+        Đang tải...
+      </h2>
+
+    </div>
+  `;
+
+
+  try {
+    const body =
+      await apiRequest(
+        '/api/blocks'
+      );
+
+
+    const blocks =
+      Array.isArray(
+        body?.blocks
+      )
+        ? body.blocks
+        : [];
+
+
+    ui.featureContent
+      .replaceChildren();
+
+
+    if (!blocks.length) {
+      ui.featureContent.innerHTML = `
+        <div class="feature-empty">
+
+          <div class="feature-empty-icon">
+            ⊘
+          </div>
+
+          <h2>
+            Chưa chặn ai
+          </h2>
+
+          <p>
+            Tài khoản bị chặn sẽ xuất hiện ở đây.
+          </p>
+
+        </div>
+      `;
+
+      return;
+    }
+
+
+    const list =
+      document.createElement(
+        'div'
+      );
+
+
+    list.className =
+      'feature-user-list';
+
+
+    for (
+      const item
+      of blocks
+    ) {
+      const user =
+        item.user;
+
+
+      if (!user) {
+        continue;
+      }
+
+
+      const row =
+        document.createElement(
+          'div'
+        );
+
+
+      row.className =
+        'feature-user';
+
+
+      const avatar =
+        document.createElement(
+          'div'
+        );
+
+
+      avatar.className =
+        'feature-user-avatar';
+
+
+      avatar.textContent =
+        initials(
+          user
+        );
+
+
+      const info =
+        document.createElement(
+          'div'
+        );
+
+
+      info.className =
+        'feature-user-info';
+
+
+      const name =
+        document.createElement(
+          'strong'
+        );
+
+
+      name.textContent =
+        displayName(
+          user
+        );
+
+
+      const username =
+        document.createElement(
+          'span'
+        );
+
+
+      username.textContent =
+        `@${user.username || 'user'}`;
+
+
+      info.append(
+        name,
+        username
+      );
+
+
+      const unblock =
+        document.createElement(
+          'button'
+        );
+
+
+      unblock.type =
+        'button';
+
+
+      unblock.className =
+        'feature-chat-btn';
+
+
+      unblock.textContent =
+        'Bỏ chặn';
+
+
+      unblock.onclick =
+        async () => {
+          try {
+            unblock.disabled =
+              true;
+
+
+            await apiRequest(
+              `/api/blocks/${encodeURIComponent(
+                getId(user)
+              )}`,
+              {
+                method:
+                  'DELETE'
+              }
+            );
+
+
+            await openBlockedPage();
+          }
+
+          catch (error) {
+            alert(
+              error.message
+            );
+
+
+            unblock.disabled =
+              false;
+          }
+        };
+
+
+      row.append(
+        avatar,
+        info,
+        unblock
+      );
+
+
+      list.appendChild(
+        row
+      );
+    }
+
+
+    ui.featureContent
+      .appendChild(
+        list
+      );
+  }
+
+  catch (error) {
+    ui.featureContent.innerHTML = `
+      <div class="feature-empty">
+
+        <div class="feature-empty-icon">
+          ⚠
+        </div>
+
+        <h2>
+          Không tải được danh sách chặn
+        </h2>
+
+        <p>
+          ${escapeHtml(
+            error.message
+          )}
+        </p>
+
+      </div>
+    `;
+  }
+}
+
+async function openProfilePage() {
+  const app =
+    document.querySelector(
+      '.app-shell'
+    );
+
+  app?.classList.add(
+    'feature-mode'
+  );
+
+
+  if (!ui.featurePage) {
+    return;
+  }
+
+
+  ui.featurePage.hidden =
+    false;
+
+
+  ui.featureTitle.textContent =
+    'Hồ sơ cá nhân';
+
+
+  ui.featureDescription.textContent =
+    'Quản lý thông tin tài khoản của bạn';
+
+
+  setRailActive(
+    null
+  );
+
+
+  const toolbar =
+    document.querySelector(
+      '.feature-toolbar'
+    );
+
+
+  if (toolbar) {
+    toolbar.style.display =
+      'none';
+  }
+
+
+  ui.featureContent.innerHTML = `
+    <div class="feature-empty">
+
+      <div class="feature-empty-icon">
+        ⏳
+      </div>
+
+      <h2>
+        Đang tải hồ sơ...
+      </h2>
+
+    </div>
+  `;
+
+
+  try {
+
+    // Dùng auth/me vì route này của m
+    // đang hoạt động và nhận session chuẩn.
+    const body =
+      await apiRequest(
+        '/api/auth/me'
+      );
+
+
+    const user =
+      body?.user;
+
+
+    if (!user) {
+      throw new Error(
+        'Không lấy được thông tin tài khoản.'
+      );
+    }
+
+
+    state.me =
+      user;
+
+
+    ui.featureContent.innerHTML = `
+      <div class="profile-page">
+
+        <div class="profile-card">
+
+          <div class="profile-big-avatar">
+            ${escapeHtml(
+              initials(user)
+            )}
+          </div>
+
+          <div class="profile-main-info">
+
+            <h2>
+              ${escapeHtml(
+                displayName(user)
+              )}
+            </h2>
+
+            <p>
+              @${escapeHtml(
+                user.username || ''
+              )}
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="profile-info-card">
+
+          <h2>
+            Thông tin cá nhân
+          </h2>
+
+
+          <div class="profile-row">
+
+            <label>
+              Tên đăng nhập
+            </label>
+
+            <div class="profile-value">
+              @${escapeHtml(
+                user.username || ''
+              )}
+            </div>
+
+          </div>
+
+
+          <div class="profile-row">
+
+            <label>
+              Tên hiển thị
+            </label>
+
+            <input
+              id="profileDisplayName"
+              class="profile-input"
+              maxlength="50"
+              value="${escapeHtml(
+                user.displayName ||
+                user.username ||
+                ''
+              )}"
+            >
+
+          </div>
+
+
+          <button
+            id="saveProfileButton"
+            class="profile-save-btn"
+            type="button"
+          >
+            Lưu thay đổi
+          </button>
+
+
+          <p
+            id="profileMessage"
+            class="profile-message"
+          ></p>
+
+        </div>
+
+      </div>
+    `;
+
+
+    const input =
+      document.getElementById(
+        'profileDisplayName'
+      );
+
+
+    const saveButton =
+      document.getElementById(
+        'saveProfileButton'
+      );
+
+
+    const message =
+      document.getElementById(
+        'profileMessage'
+      );
+
+
+    saveButton.onclick =
+      async () => {
+
+        const displayName =
+          input.value.trim();
+
+
+        if (!displayName) {
+          message.textContent =
+            'Tên hiển thị không được để trống.';
+
+          return;
+        }
+
+
+        try {
+
+          saveButton.disabled =
+            true;
+
+
+          saveButton.textContent =
+            'Đang lưu...';
+
+
+          const result =
+            await apiRequest(
+              '/api/profile',
+              {
+                method:
+                  'PATCH',
+
+                body:
+                  JSON.stringify({
+                    displayName
+                  })
+              }
+            );
+
+
+          state.me = {
+            ...state.me,
+            ...result.user
+          };
+
+
+          renderMe();
+
+
+          message.textContent =
+            'Đã cập nhật hồ sơ.';
+
+
+          saveButton.textContent =
+            'Đã lưu';
+
+        }
+
+        catch (error) {
+
+          console.error(
+            'Save profile:',
+            error
+          );
+
+
+          message.textContent =
+            error.message;
+
+
+          saveButton.textContent =
+            'Lưu thay đổi';
+
+        }
+
+        finally {
+
+          saveButton.disabled =
+            false;
+
+        }
+
+      };
+
+  }
+
+  catch (error) {
+
+    console.error(
+      'Open profile:',
+      error
+    );
+
+
+    ui.featureContent.innerHTML = `
+      <div class="feature-empty">
+
+        <div class="feature-empty-icon">
+          ⚠
+        </div>
+
+        <h2>
+          Không tải được hồ sơ
+        </h2>
+
+        <p>
+          ${escapeHtml(
+            error.message
+          )}
+        </p>
+
+      </div>
+    `;
+
+  }
+}
+
+function applySavedTheme() {
+  const saved =
+    localStorage.getItem(
+      'secure-chat-theme'
+    );
+
+
+  if (
+    saved ===
+    'light'
+  ) {
+    document.body
+      .classList
+      .add(
+        'light-theme'
+      );
+  }
+
+  else {
+    document.body
+      .classList
+      .remove(
+        'light-theme'
+      );
+  }
+}
+
+
+function toggleTheme() {
+  document.body
+    .classList
+    .toggle(
+      'light-theme'
+    );
+
+
+  const light =
+    document.body
+      .classList
+      .contains(
+        'light-theme'
+      );
+
+
+  localStorage.setItem(
+    'secure-chat-theme',
+    light
+      ? 'light'
+      : 'dark'
+  );
+}
+
+// =====================================================
+// NEW CHAT MODAL
+// =====================================================
+
+function getNewChatElements() {
+  return {
+    modal:
+      document.getElementById(
+        'newChatModal'
+      ),
+
+    backdrop:
+      document.getElementById(
+        'newChatBackdrop'
+      ),
+
+    closeButton:
+      document.getElementById(
+        'btnCloseNewChat'
+      ),
+
+    cancelButton:
+      document.getElementById(
+        'btnCancelNewChat'
+      ),
+
+    search:
+      document.getElementById(
+        'newChatSearch'
+      ),
+
+    content:
+      document.getElementById(
+        'newChatContent'
+      )
+  };
+}
+
+
+// =====================================================
+// ĐÓNG MODAL
+// =====================================================
+
+function closeNewChatModal() {
+  const {
+    modal,
+    search
+  } =
+    getNewChatElements();
+
+
+  if (!modal) {
+    return;
+  }
+
+
+  modal.hidden =
+    true;
+
+
+  document.body
+    .classList
+    .remove(
+      'modal-open'
+    );
+
+
+  if (search) {
+    search.value =
+      '';
+  }
+}
+
+
+// =====================================================
+// RENDER DANH SÁCH BẠN BÈ
+// =====================================================
+
+function renderNewChatFriends(
+  query = ''
+) {
+  const {
+    content
+  } =
+    getNewChatElements();
+
+
+  if (!content) {
+    return;
+  }
+
+
+  const keyword =
+    String(
+      query || ''
+    )
+      .trim()
+      .toLowerCase();
+
+
+  const friends =
+    Array.isArray(
+      state.friends
+    )
+      ? state.friends
+      : [];
+
+
+  const users =
+    friends
+      .map(
+        item =>
+          item?.user
+      )
+      .filter(Boolean);
+
+
+  const filtered =
+    users.filter(
+      user => {
+
+        if (!keyword) {
+          return true;
+        }
+
+
+        const text =
+          `${
+            displayName(
+              user
+            )
+          } ${
+            user.username ||
+            ''
+          }`
+            .toLowerCase();
+
+
+        return text.includes(
+          keyword
+        );
+      }
+    );
+
+
+  content
+    .replaceChildren();
+
+
+  // ===================================
+  // KHÔNG CÓ BẠN
+  // ===================================
+
+  if (!users.length) {
+
+    content.innerHTML = `
+      <div class="new-chat-empty">
+
+        <div class="new-chat-empty-icon">
+          👥
+        </div>
+
+        <strong>
+          Chưa có bạn bè
+        </strong>
+
+        <span>
+          Hãy kết bạn trước khi bắt đầu cuộc trò chuyện.
+        </span>
+
+      </div>
+    `;
+
+    return;
+  }
+
+
+  // ===================================
+  // SEARCH KHÔNG CÓ KẾT QUẢ
+  // ===================================
+
+  if (!filtered.length) {
+
+    content.innerHTML = `
+      <div class="new-chat-empty">
+
+        <div class="new-chat-empty-icon">
+          🔍
+        </div>
+
+        <strong>
+          Không tìm thấy
+        </strong>
+
+        <span>
+          Không có bạn bè nào khớp với "${escapeHtml(
+            query
+          )}".
+        </span>
+
+      </div>
+    `;
+
+    return;
+  }
+
+
+  // ===================================
+  // RENDER USER
+  // ===================================
+
+  for (
+    const user
+    of filtered
+  ) {
+
+    const row =
+      document.createElement(
+        'div'
+      );
+
+
+    row.className =
+      'new-chat-user';
+
+
+    row.setAttribute(
+      'role',
+      'button'
+    );
+
+
+    row.tabIndex =
+      0;
+
+
+    // AVATAR
+
+    const avatar =
+      document.createElement(
+        'div'
+      );
+
+
+    avatar.className =
+      'new-chat-user-avatar';
+
+
+    avatar.textContent =
+      initials(
+        user
+      );
+
+
+    // INFO
+
+    const info =
+      document.createElement(
+        'div'
+      );
+
+
+    info.className =
+      'new-chat-user-info';
+
+
+    const name =
+      document.createElement(
+        'strong'
+      );
+
+
+    name.textContent =
+      displayName(
+        user
+      );
+
+
+    const username =
+      document.createElement(
+        'span'
+      );
+
+
+    username.textContent =
+      `@${
+        user.username ||
+        'user'
+      }`;
+
+
+    info.append(
+      name,
+      username
+    );
+
+
+    row.append(
+      avatar,
+      info
+    );
+
+
+    // ===================================
+    // MỞ CHAT
+    // ===================================
+
+    const openThisChat =
+      async () => {
+
+        try {
+
+          closeNewChatModal();
+
+
+          openChatPage();
+
+
+          await selectPeer(
+            user
+          );
+
+        }
+
+        catch (error) {
+
+          console.error(
+            'Open new chat:',
+            error
+          );
+
+
+          showNotice(
+            error.message,
+            'error'
+          );
+
+        }
+
+      };
+
+
+    row.addEventListener(
+      'click',
+      openThisChat
+    );
+
+
+    row.addEventListener(
+      'keydown',
+      event => {
+
+        if (
+          event.key ===
+            'Enter' ||
+          event.key ===
+            ' '
+        ) {
+
+          event.preventDefault();
+
+
+          openThisChat();
+
+        }
+
+      }
+    );
+
+
+    content.appendChild(
+      row
+    );
+  }
+}
+
+
+// =====================================================
+// MỞ MODAL
+// =====================================================
+
+async function openNewChatModal() {
+  const {
+    modal,
+    search
+  } =
+    getNewChatElements();
+
+
+  if (!modal) {
+    return;
+  }
+
+
+  try {
+
+    // Refresh danh sách bạn bè trước
+    await loadFriends();
+
+
+    modal.hidden =
+      false;
+
+
+    document.body
+      .classList
+      .add(
+        'modal-open'
+      );
+
+
+    renderNewChatFriends();
+
+
+    setTimeout(
+      () => {
+        search?.focus();
+      },
+      50
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      'Load friends for new chat:',
+      error
+    );
+
+
+    showNotice(
+      error.message,
+      'error'
+    );
+
+  }
+}
+
 function bindEvents() {
+
+  // ============================================================
+// EMOJI
+// ============================================================
+
+ui.btnEmoji?.addEventListener(
+    'click',
+    event => {
+
+        event.stopPropagation();
+
+        ui.emojiPicker.hidden =
+            !ui.emojiPicker.hidden;
+    }
+);
+
+
+// Bấm emoji -> thêm vào ô chat
+ui.emojiPicker?.addEventListener(
+    'click',
+    event => {
+
+        const button =
+            event.target.closest(
+                '[data-emoji]'
+            );
+
+        if (!button) return;
+
+
+        const emoji =
+            button.dataset.emoji;
+
+
+        const start =
+            ui.messageInput.selectionStart ??
+            ui.messageInput.value.length;
+
+        const end =
+            ui.messageInput.selectionEnd ??
+            start;
+
+
+        const before =
+            ui.messageInput.value.slice(
+                0,
+                start
+            );
+
+        const after =
+            ui.messageInput.value.slice(
+                end
+            );
+
+
+        ui.messageInput.value =
+            before +
+            emoji +
+            after;
+
+
+        const newPosition =
+            start +
+            emoji.length;
+
+
+        ui.messageInput.focus();
+
+
+        ui.messageInput.setSelectionRange(
+            newPosition,
+            newPosition
+        );
+
+
+        ui.emojiPicker.hidden =
+            true;
+
+
+        // kích hoạt resize textarea
+        ui.messageInput.dispatchEvent(
+            new Event(
+                'input',
+                {
+                    bubbles: true
+                }
+            )
+        );
+    }
+);
+
+
+// Click ra ngoài thì đóng bảng emoji
+document.addEventListener(
+    'click',
+    event => {
+
+        if (
+            !ui.emojiPicker ||
+            ui.emojiPicker.hidden
+        ) {
+            return;
+        }
+
+
+        if (
+            event.target.closest(
+                '.emoji-wrap'
+            )
+        ) {
+            return;
+        }
+
+
+        ui.emojiPicker.hidden =
+            true;
+    }
+);
+
+
+  const btnNewChat =
+  document.getElementById(
+    'btnNewChat'
+  );
+
+
+const {
+  modal:
+    newChatModal,
+
+  backdrop:
+    newChatBackdrop,
+
+  closeButton:
+    btnCloseNewChat,
+
+  cancelButton:
+    btnCancelNewChat,
+
+  search:
+    newChatSearch
+} =
+  getNewChatElements();
+
+
+btnNewChat
+  ?.addEventListener(
+    'click',
+    openNewChatModal
+  );
+
+
+btnCloseNewChat
+  ?.addEventListener(
+    'click',
+    closeNewChatModal
+  );
+
+
+btnCancelNewChat
+  ?.addEventListener(
+    'click',
+    closeNewChatModal
+  );
+
+
+newChatBackdrop
+  ?.addEventListener(
+    'click',
+    closeNewChatModal
+  );
+
+
+newChatSearch
+  ?.addEventListener(
+    'input',
+    event => {
+
+      renderNewChatFriends(
+        event.target.value
+      );
+
+    }
+  );
+
+
+document
+  .addEventListener(
+    'keydown',
+    event => {
+
+      if (
+        event.key ===
+          'Escape' &&
+        newChatModal &&
+        !newChatModal.hidden
+      ) {
+
+        closeNewChatModal();
+
+      }
+
+    }
+  );
+
+  ui.btnProfile
+  ?.addEventListener(
+    'click',
+    openProfilePage
+  );
+
+  ui.navRequests
+  ?.addEventListener(
+    'click',
+    openRequestsPage
+  );
 
   ui.keyAlgorithm
   ?.addEventListener(
@@ -3657,6 +7278,37 @@ ui.peerInfoModal
 
       }
 
+    }
+  );
+
+    ui.navMessages
+  ?.addEventListener(
+    'click',
+    openChatPage
+  );
+
+
+ui.navFriends
+  ?.addEventListener(
+    'click',
+    openFriendsPage
+  );  
+
+  ui.navBlocked?.addEventListener(
+    'click',
+    () => {
+      ui.navBlocked
+  ?.addEventListener(
+    'click',
+    openBlockedPage
+  );
+    }
+  );
+
+  ui.btnProfile?.addEventListener(
+    'click',
+    () => {
+      console.log('Bấm Hồ sơ');
     }
   );
 
@@ -3825,6 +7477,102 @@ ui.peerInfoModal
 
     }
   );
+
+  function deleteCurrentKey() {
+
+    if (!state.activeConversation) {
+        ui.keyModalError.textContent =
+            'Chưa chọn cuộc trò chuyện.';
+        return;
+    }
+
+    const algorithm =
+        ui.algorithmSelect.value;
+
+    const lookupKey =
+        conversationKey(algorithm);
+
+    const keyId =
+        state.activeKeyByConversation.get(
+            lookupKey
+        );
+
+
+    if (!keyId) {
+        ui.keyModalError.textContent =
+            'Cuộc trò chuyện này chưa có khóa.';
+        return;
+    }
+
+
+    const ok = confirm(
+        'Xóa khóa hiện tại?\n\n' +
+        'Tin nhắn cũ dùng khóa này có thể không giải mã được.'
+    );
+
+    if (!ok) return;
+
+
+    // Xóa khóa khỏi bộ nhớ
+    state.activeKeyByConversation.delete(
+        lookupKey
+    );
+
+    state.runtimeKeys.delete(
+        keyId
+    );
+
+
+    // Nếu bản hiện tại có lưu localStorage
+    // thì xóa luôn các key liên quan nếu có
+    try {
+
+        const conversationId =
+            getId(
+                state.activeConversation
+            );
+
+        const possibleKeys = [
+            `securechat:key:${conversationId}:${algorithm}`,
+            `secure-chat:key:${conversationId}:${algorithm}`,
+            `chat:key:${conversationId}:${algorithm}`,
+            `key:${conversationId}:${algorithm}`
+        ];
+
+        for (
+            const storageKey of possibleKeys
+        ) {
+            localStorage.removeItem(
+                storageKey
+            );
+        }
+
+    } catch (error) {
+
+        console.warn(
+            'Không xóa được localStorage:',
+            error
+        );
+    }
+
+
+    // Xóa dữ liệu đang hiện trên modal
+    ui.keyIdInput.value = '';
+    ui.keySecretInput.value = '';
+
+    ui.keyModalError.textContent =
+        'Đã xóa khóa. Bây giờ có thể tạo hoặc nhập khóa mới.';
+
+
+    // Cập nhật trạng thái ngoài thanh chat
+    updateKeyStatus();
+
+
+    console.log(
+        '🗑️ Đã xóa key:',
+        keyId
+    );
+}
 
   ui.btnSaveKey
     ?.addEventListener(
@@ -3998,10 +7746,55 @@ ui.peerInfoModal
 }
 
 // =====================================================
+// NEW CHAT - GLOBAL EVENTS
+// =====================================================
+
+document.addEventListener(
+  'click',
+  event => {
+
+    const newChatButton =
+      event.target.closest(
+        '#btnNewChat'
+      );
+
+
+    if (newChatButton) {
+
+      event.preventDefault();
+
+      event.stopPropagation();
+
+      openNewChatModal();
+
+      return;
+    }
+
+
+    if (
+      event.target.closest(
+        '#btnCloseNewChat'
+      ) ||
+      event.target.closest(
+        '#btnCancelNewChat'
+      ) ||
+      event.target.id ===
+        'newChatBackdrop'
+    ) {
+
+      closeNewChatModal();
+
+    }
+
+  }
+);
+
+// =====================================================
 // BOOTSTRAP
 // =====================================================
 
 async function bootstrap() {
+   applySavedTheme();
   bindEvents();
 
   if (DEMO_MODE) {
@@ -4015,12 +7808,11 @@ async function bootstrap() {
 
   renderMe();
 
-  await Promise.all(
-    [
-      loadUsers(),
-      loadConversations()
-    ]
-  );
+  await Promise.all([
+  loadUsers(),
+  loadFriends(),
+  loadConversations()
+]);
 
   renderUsers();
   renderActivePeer();

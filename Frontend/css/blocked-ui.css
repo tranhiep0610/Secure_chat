@@ -1,0 +1,414 @@
+/* =========================================================
+   BLOCKED USERS PAGE
+========================================================= */
+
+.blocked-page {
+    max-width: 980px;
+    margin: 6px auto 34px;
+}
+
+.blocked-card {
+    min-height: 500px;
+
+    overflow: hidden;
+
+    border: 1px solid #e4e7f0;
+    border-radius: 15px;
+
+    background: #fff;
+
+    box-shadow:
+        0 8px 28px
+        rgba(28, 35, 57, .04);
+}
+
+.blocked-card-head {
+    min-height: 78px;
+
+    padding: 18px 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    border-bottom: 1px solid #eceef4;
+}
+
+.blocked-card-head h2 {
+    margin: 0;
+
+    color: #20283b;
+
+    font-size: 16px;
+    font-weight: 750;
+}
+
+.blocked-card-head p {
+    margin: 5px 0 0;
+
+    color: #929caf;
+
+    font-size: 10px;
+}
+
+.blocked-count {
+    min-width: 30px;
+    height: 30px;
+
+    padding: 0 9px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 999px;
+
+    background: #efedff;
+    color: #7568ef;
+
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.blocked-tools {
+    padding: 14px 18px;
+
+    border-bottom: 1px solid #eceef4;
+}
+
+.blocked-search {
+    max-width: 440px;
+    height: 41px;
+
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    padding: 0 12px;
+
+    border: 1px solid #e0e4ed;
+    border-radius: 10px;
+
+    background: #fafbfc;
+}
+
+.blocked-search:focus-within {
+    border-color: #8175f2;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(129, 117, 242, .10);
+
+    background: #fff;
+}
+
+.blocked-search svg {
+    width: 17px;
+    height: 17px;
+
+    fill: none;
+    stroke: #8e98ad;
+
+    stroke-width: 1.8;
+    stroke-linecap: round;
+}
+
+.blocked-search input {
+    width: 100%;
+
+    border: 0;
+    outline: 0;
+
+    background: transparent;
+
+    color: #30394d;
+
+    font: inherit;
+    font-size: 11px;
+}
+
+.blocked-list {
+    padding: 8px;
+}
+
+.blocked-user-row {
+    min-height: 66px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 10px 12px;
+
+    border-radius: 11px;
+
+    transition:
+        opacity .15s ease,
+        transform .15s ease,
+        background .15s ease;
+}
+
+.blocked-user-row:hover {
+    background: #fafafd;
+}
+
+.blocked-user-row.removing {
+    opacity: 0;
+    transform: translateX(12px);
+}
+
+.blocked-avatar {
+    width: 41px;
+    height: 41px;
+
+    flex: 0 0 41px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #6f63ee,
+            #9b82ff
+        );
+
+    color: #fff;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    box-shadow:
+        0 4px 11px
+        rgba(111, 99, 238, .17);
+}
+
+.blocked-user-info {
+    min-width: 0;
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.blocked-user-info strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #333c50;
+
+    font-size: 12px;
+}
+
+.blocked-user-info span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #969fb2;
+
+    font-size: 10px;
+}
+
+.blocked-unblock-btn {
+    min-width: 82px;
+    height: 34px;
+
+    padding: 0 12px;
+
+    border: 1px solid #dedfed;
+    border-radius: 9px;
+
+    background: #fff;
+
+    color: #7468ec;
+
+    font: inherit;
+    font-size: 10px;
+    font-weight: 750;
+
+    cursor: pointer;
+}
+
+.blocked-unblock-btn:hover {
+    border-color: #8175f2;
+
+    background: #f6f4ff;
+}
+
+.blocked-unblock-btn:disabled {
+    opacity: .55;
+    cursor: wait;
+}
+
+.blocked-empty,
+.blocked-loading {
+    min-height: 340px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px;
+
+    text-align: center;
+}
+
+.blocked-empty-icon {
+    width: 49px;
+    height: 49px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 14px;
+
+    background: #efedff;
+    color: #796df0;
+}
+
+.blocked-empty-icon svg {
+    width: 22px;
+    height: 22px;
+
+    fill: none;
+    stroke: currentColor;
+
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.blocked-empty h3 {
+    margin: 12px 0 4px;
+
+    color: #414a5e;
+
+    font-size: 13px;
+}
+
+.blocked-empty p {
+    max-width: 310px;
+
+    margin: 0;
+
+    color: #929caf;
+
+    font-size: 10px;
+    line-height: 1.55;
+}
+
+.blocked-loading {
+    gap: 10px;
+
+    color: #929caf;
+
+    font-size: 10px;
+}
+
+.blocked-spinner {
+    width: 26px;
+    height: 26px;
+
+    border:
+        3px solid
+        rgba(117, 104, 239, .16);
+
+    border-top-color: #7568ef;
+
+    border-radius: 50%;
+
+    animation:
+        blocked-spin .7s
+        linear infinite;
+}
+
+@keyframes blocked-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* DARK MODE */
+
+body:not(.light-theme)
+.blocked-card {
+    border-color: #2c3243;
+
+    background: #181c29;
+}
+
+body:not(.light-theme)
+.blocked-card-head,
+body:not(.light-theme)
+.blocked-tools {
+    border-color: #2c3243;
+}
+
+body:not(.light-theme)
+.blocked-card-head h2 {
+    color: #eef1f7;
+}
+
+body:not(.light-theme)
+.blocked-search {
+    border-color: #32394c;
+
+    background: #111520;
+}
+
+body:not(.light-theme)
+.blocked-search input {
+    color: #e6e9f1;
+}
+
+body:not(.light-theme)
+.blocked-user-row:hover {
+    background: #202536;
+}
+
+body:not(.light-theme)
+.blocked-user-info strong {
+    color: #e6eaf2;
+}
+
+body:not(.light-theme)
+.blocked-unblock-btn {
+    border-color: #363d51;
+
+    background: #1c2130;
+
+    color: #a096ff;
+}
+
+body:not(.light-theme)
+.blocked-unblock-btn:hover {
+    background: #262a40;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+    .blocked-card-head {
+        align-items: flex-start;
+    }
+
+    .blocked-search {
+        max-width: none;
+    }
+
+    .blocked-user-row {
+        flex-wrap: wrap;
+    }
+
+    .blocked-unblock-btn {
+        margin-left: 53px;
+    }
+}

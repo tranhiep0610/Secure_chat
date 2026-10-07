@@ -1,61 +1,89 @@
+const mongoose = require("mongoose");
 const User = require("../models/User");
 
-const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const publicUser = (user) => ({
-    id: user._id.toString(),
-    username: user.username,
-    displayName: user.displayName,
-    createdAt: user.createdAt
-});
+// ============================================================
+// GET /api/users
+// GET /api/users?search=huy123
+// ============================================================
 
-// =========================
-// DANH SÁCH / TÌM NGƯỜI DÙNG
-// GET /api/users?q=<keyword>
-// =========================
 const getUsers = async (req, res) => {
     try {
-        const rawQuery = typeof req.query?.q === "string" ? req.query.q.trim() : "";
-        const keyword = rawQuery.slice(0, 50);
+        const currentUserId =
+            req.session?.userId;
 
-        const filter = {
-            _id: { $ne: req.session.userId }
+        if (!currentUserId) {
+            return res.status(401).json({
+                message: "Chưa đăng nhập"
+            });
+        }
+
+        const search =
+            String(
+                req.query?.search || ""
+            )
+                .trim()
+                .toLowerCase();
+
+        const query = {
+            _id: {
+                $ne: new mongoose.Types.ObjectId(
+                    currentUserId
+                )
+            }
         };
 
-        if (keyword) {
-            const safeKeyword = escapeRegex(keyword);
-            filter.$or = [
+        // Nếu có từ khóa thì tìm theo username hoặc displayName
+        if (search) {
+            query.$or = [
                 {
                     usernameNormalized: {
-                        $regex: escapeRegex(keyword.toLowerCase()),
+                        $regex: search,
+                        $options: "i"
+                    }
+                },
+                {
+                    username: {
+                        $regex: search,
                         $options: "i"
                     }
                 },
                 {
                     displayName: {
-                        $regex: safeKeyword,
+                        $regex: search,
                         $options: "i"
                     }
                 }
             ];
         }
 
-        const users = await User.find(filter)
-            .select("_id username displayName createdAt")
-            .sort({ createdAt: -1 })
+        const users = await User
+            .find(query)
+            .select(
+                "_id username displayName emailVerified createdAt"
+            )
+            .sort({
+                createdAt: -1
+            })
             .limit(50)
             .lean();
 
         return res.status(200).json({
-            users: users.map(publicUser)
+            users
         });
+
     } catch (error) {
-        console.error("Get users error:", error.message);
+        console.error(
+            "Get users error:",
+            error
+        );
+
         return res.status(500).json({
-            message: "Lỗi máy chủ"
+            message: "Không thể tải danh sách người dùng"
         });
     }
 };
+
 
 module.exports = {
     getUsers

@@ -1,158 +1,243 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 
 <head>
-    <meta charset="UTF-8">
+  <meta charset="utf-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  >
 
-    <title>Đăng ký | Secure Chat</title>
+  <title>
+    Đăng ký | SecureChat
+  </title>
 
-    <link rel="stylesheet" href="./css/style.css">
-    <link rel="stylesheet" href="./css/auth.css">
+  <link
+    rel="stylesheet"
+    href="./css/auth-v2.css"
+  >
 </head>
 
-<body>
 
-    <div class="background-shape shape-one"></div>
-    <div class="background-shape shape-two"></div>
+<body
+  class="scauth-page"
+  data-page="register"
+>
 
-    <main class="auth-wrapper">
+  <main class="scauth-layout">
 
-        <section class="auth-card">
+    <section class="scauth-left">
 
-            <!-- Logo -->
-            <div class="brand">
-                <div class="brand-icon">S</div>
+      <div class="scauth-brand">
 
-                <span class="brand-name">
-                    Secure Chat
-                </span>
-            </div>
+        <div class="scauth-logo">
+          S
+        </div>
 
+        <div>
+          <strong>
+            SecureChat
+          </strong>
 
-            <!-- Tiêu đề -->
-            <div class="auth-header">
+          <span>
+            AES / DES SECURE MESSAGING
+          </span>
+        </div>
 
-                <span class="auth-badge">
-                    Create your account
-                </span>
-
-                <h1>
-                    Join
-                    <span>Secure Chat</span>
-                </h1>
-
-                <p>
-                    Tạo tài khoản để bắt đầu sử dụng
-                    hệ thống Secure Chat.
-                </p>
-
-            </div>
+      </div>
 
 
-            <!-- Form đăng ký -->
-            <form id="registerForm">
+      <div class="scauth-hero">
 
-                <div class="form-group">
+        <span class="scauth-eyebrow">
+          ACCOUNT SECURITY
+        </span>
 
-                    <label for="registerUsername">
-                        Tên đăng nhập
-                    </label>
+        <h1>
+          Bảo vệ tài khoản
+          <br>
 
-                    <input
-                        type="text"
-                        id="registerUsername"
-                        placeholder="Nhập tên đăng nhập"
-                        autocomplete="username"
-                        required
-                    >
+          <em>
+            bằng Email OTP
+          </em>
+        </h1>
 
-                </div>
+        <p>
+          SecureChat sử dụng email để xác thực tài khoản
+          và khôi phục mật khẩu bằng mã OTP có thời hạn.
+        </p>
 
-
-                <div class="form-group">
-
-                    <label for="registerPassword">
-                        Mật khẩu
-                    </label>
-
-                    <input
-                        type="password"
-                        id="registerPassword"
-                        placeholder="Nhập mật khẩu"
-                        autocomplete="new-password"
-                        required
-                    >
-
-                </div>
+      </div>
 
 
-                <div class="form-group">
+      <div class="scauth-tech">
 
-                    <label for="confirmPassword">
-                        Xác nhận mật khẩu
-                    </label>
+        <i></i>
 
-                    <input
-                        type="password"
-                        id="confirmPassword"
-                        placeholder="Nhập lại mật khẩu"
-                        autocomplete="new-password"
-                        required
-                    >
+        Argon2id · Email OTP · Secure Session
 
-                </div>
+      </div>
+
+    </section>
 
 
-                <p
-                    id="message"
-                    class="form-message"
-                ></p>
+    <section class="scauth-right">
+
+      
+<div class="scauth-card">
+
+  <div class="scauth-card-logo">
+    S
+  </div>
+
+  <h2>
+    Đăng ký SecureChat
+  </h2>
+
+  <p>
+    Tạo tài khoản và xác thực email bằng OTP.
+  </p>
 
 
-                <button
-                    type="submit"
-                    class="primary-button"
-                >
-                    <span>Tạo tài khoản</span>
+  <form
+    id="registerForm"
+    class="scauth-form"
+  >
 
-                    <span class="button-arrow">
-                        →
-                    </span>
-                </button>
+    <label>
+      Tên đăng nhập
 
-            </form>
+      <div class="scauth-input">
+        <span>@</span>
 
-
-            <p class="auth-switch">
-
-                Đã có tài khoản?
-
-                <a href="./index.html">
-                    Đăng nhập
-                </a>
-
-            </p>
+        <input
+          id="username"
+          type="text"
+          minlength="3"
+          maxlength="32"
+          placeholder="Nhập username..."
+          required
+        >
+      </div>
+    </label>
 
 
-            <div class="auth-footer">
+    <label>
+      Tên hiển thị
 
-                <span class="status-dot"></span>
+      <div class="scauth-input">
+        <span>•</span>
 
-                Prototype giao diện đăng nhập / đăng ký
+        <input
+          id="displayName"
+          type="text"
+          maxlength="50"
+          placeholder="Tên hiển thị..."
+          required
+        >
+      </div>
+    </label>
 
-            </div>
 
-        </section>
+    <label>
+      Email
 
-    </main>
+      <div class="scauth-input">
+        <span>✉</span>
+
+        <input
+          id="email"
+          type="email"
+          autocomplete="email"
+          placeholder="ban@gmail.com"
+          required
+        >
+      </div>
+    </label>
 
 
-    <script src="./js/auth.js"></script>
+    <label>
+      Mật khẩu
+
+      <div class="scauth-input">
+        <span>•</span>
+
+        <input
+          id="password"
+          type="password"
+          minlength="8"
+          maxlength="128"
+          placeholder="Tối thiểu 8 ký tự"
+          required
+        >
+
+        <button
+          type="button"
+          data-toggle-password="password"
+        >
+          👁
+        </button>
+      </div>
+    </label>
+
+
+    <label>
+      Nhập lại mật khẩu
+
+      <div class="scauth-input">
+        <span>•</span>
+
+        <input
+          id="confirmPassword"
+          type="password"
+          minlength="8"
+          maxlength="128"
+          placeholder="Nhập lại mật khẩu"
+          required
+        >
+      </div>
+    </label>
+
+
+    <div
+      id="authStatus"
+      class="scauth-status"
+    ></div>
+
+
+    <button
+      class="scauth-submit"
+      type="submit"
+    >
+      Đăng ký & gửi OTP
+    </button>
+
+  </form>
+
+
+  <div class="scauth-foot">
+
+    Đã có tài khoản?
+
+    <a href="./index.html">
+      Đăng nhập
+    </a>
+
+  </div>
+
+</div>
+
+
+    </section>
+
+  </main>
+
+
+  <script
+    type="module"
+    src="./js/auth-v2.js"
+  ></script>
 
 </body>
 

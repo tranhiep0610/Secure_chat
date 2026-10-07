@@ -1,100 +1,332 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
 
-    <title>Đăng nhập | Secure Chat</title>
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  >
 
-    <link rel="stylesheet" href="./css/style.css">
-    <link rel="stylesheet" href="./css/auth.css">
+  <title>
+    Đăng nhập | SecureChat
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="./css/auth-v2.css"
+  >
 </head>
 
-<body>
-    <div class="background-shape shape-one"></div>
-    <div class="background-shape shape-two"></div>
 
-    <main class="auth-wrapper"> 
-        <section class="auth-card">
+<body
+  class="scauth-page"
+  data-page="login"
+>
 
-            <!-- Logo -->
-            <div class="brand">
-                <div class="brand-icon">S</div>
-                <span class="brand-name">Secure Chat</span>
+  <main class="scauth-layout">
+
+
+    <section class="scauth-left">
+
+      <div class="scauth-brand">
+
+        <div class="scauth-logo">
+          S
+        </div>
+
+        <div>
+
+          <strong>
+            SecureChat
+          </strong>
+
+          <span>
+            AES / DES SECURE MESSAGING
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <div class="scauth-hero">
+
+        <span class="scauth-eyebrow">
+          SECURE MESSAGING
+        </span>
+
+        <h1>
+          Trò chuyện bảo mật
+          <br>
+
+          <em>
+            với AES & DES
+          </em>
+        </h1>
+
+
+        <p>
+          SecureChat là hệ thống trò chuyện 1–1 theo thời gian thực.
+          Tin nhắn được mã hóa phía trình duyệt trước khi gửi tới máy chủ.
+        </p>
+
+
+        <div class="scauth-grid">
+
+          <article>
+
+            <b>
+              AES
+            </b>
+
+            <div>
+
+              <strong>
+                AES-GCM
+              </strong>
+
+              <p>
+                Mã hóa chính và kiểm tra tính toàn vẹn tin nhắn.
+              </p>
+
             </div>
 
-            <!-- Tiêu đề -->
-            <div class="auth-header">
-                <span class="auth-badge">
-                    Secure Chat Project
-                </span>
+          </article>
 
-                <h1>
-                    Welcome to
-                    <span>Secure Chat</span>
-                </h1>
 
-                <p>
-                    Đăng nhập để tiếp tục sử dụng hệ thống
-                    trò chuyện Secure Chat.
-                </p>
+          <article>
+
+            <b>
+              DES
+            </b>
+
+            <div>
+
+              <strong>
+                DES-CBC
+              </strong>
+
+              <p>
+                Dùng để học tập, benchmark và so sánh với AES.
+              </p>
+
             </div>
 
-            <!-- Form đăng nhập -->
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="loginUsername">
-                        Tên đăng nhập
-                    </label>
+          </article>
 
-                    <input
-                        type="text"
-                        id="loginUsername"
-                        placeholder="Nhập tên đăng nhập"
-                        autocomplete="username"
-                        required
-                    >
-                </div>
 
-                <div class="form-group">
-                    <label for="loginPassword">
-                        Mật khẩu
-                    </label>
+          <article>
 
-                    <input
-                        type="password"
-                        id="loginPassword"
-                        placeholder="Nhập mật khẩu"
-                        autocomplete="current-password"
-                        required
-                    >
-                </div>
+            <b>
+              OTP
+            </b>
 
-                <p id="message" class="form-message"></p>
+            <div>
 
-                <button type="submit" class="primary-button">
-                    <span>Đăng nhập</span>
-                    <span class="button-arrow">→</span>
-                </button>
-            </form>
+              <strong>
+                Email OTP
+              </strong>
 
-            <!-- Chuyển đăng ký -->
-            <p class="auth-switch">
-                Chưa có tài khoản?
-                <a href="./register.html">Tạo tài khoản</a>
-            </p>
+              <p>
+                Xác thực đăng ký và khôi phục mật khẩu qua Gmail.
+              </p>
 
-            <!-- Footer -->
-            <div class="auth-footer">
-                <span class="status-dot"></span>
-                Prototype giao diện đăng nhập / đăng ký
             </div>
 
-        </section>
-    </main>
+          </article>
 
-    <script src="./js/auth.js"></script>
+
+          <article>
+
+            <b>
+              RT
+            </b>
+
+            <div>
+
+              <strong>
+                Socket.IO
+              </strong>
+
+              <p>
+                Gửi nhận tin nhắn realtime sau khi hai người kết bạn.
+              </p>
+
+            </div>
+
+          </article>
+
+        </div>
+
+      </div>
+
+
+      <div class="scauth-tech">
+
+        <i></i>
+
+        Argon2id · AES-GCM · DES-CBC · Socket.IO · Gmail OTP
+
+      </div>
+
+    </section>
+
+
+
+    <section class="scauth-right">
+
+      <div class="scauth-card">
+
+        <div class="scauth-card-logo">
+          S
+        </div>
+
+
+        <h2>
+          Đăng nhập SecureChat
+        </h2>
+
+
+        <p>
+          Nhập username, email đã xác thực và mật khẩu.
+        </p>
+
+
+        <form
+          id="loginForm"
+          class="scauth-form"
+        >
+
+          <label>
+
+            Tên đăng nhập
+
+            <div class="scauth-input">
+
+              <span>
+                @
+              </span>
+
+              <input
+                id="username"
+                type="text"
+                autocomplete="username"
+                placeholder="Nhập username..."
+                required
+              >
+
+            </div>
+
+          </label>
+
+
+          <label>
+
+            Email xác thực
+
+            <div class="scauth-input">
+
+              <span>
+                ✉
+              </span>
+
+              <input
+                id="email"
+                type="email"
+                autocomplete="email"
+                placeholder="Nhập Gmail của bạn..."
+                required
+              >
+
+            </div>
+
+          </label>
+
+
+          <label>
+
+            <div class="scauth-labelrow">
+
+              <span>
+                Mật khẩu
+              </span>
+
+
+              <a href="./forgot-password.html">
+                Quên mật khẩu?
+              </a>
+
+            </div>
+
+
+            <div class="scauth-input">
+
+              <span>
+                •
+              </span>
+
+              <input
+                id="password"
+                type="password"
+                autocomplete="current-password"
+                placeholder="Nhập mật khẩu"
+                required
+              >
+
+
+              <button
+                type="button"
+                data-toggle-password="password"
+                title="Hiện / ẩn mật khẩu"
+              >
+                👁
+              </button>
+
+            </div>
+
+          </label>
+
+
+          <div
+            id="authStatus"
+            class="scauth-status"
+          ></div>
+
+
+          <button
+            class="scauth-submit"
+            type="submit"
+          >
+            Đăng nhập
+          </button>
+
+        </form>
+
+
+        <div class="scauth-foot">
+
+          Chưa có tài khoản?
+
+          <a href="./register.html">
+            Đăng ký ngay
+          </a>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <script
+    type="module"
+    src="./js/auth-v2.js"
+  ></script>
+
 </body>
 
 </html>
