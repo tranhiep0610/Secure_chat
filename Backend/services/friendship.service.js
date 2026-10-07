@@ -1,8 +1,8 @@
 const Friendship =
-    require("../models/friendship");
+    require("../models/Friendship");
 
 const Block =
-    require("../models/block");
+    require("../models/Block");
 
 
 // ======================================================
