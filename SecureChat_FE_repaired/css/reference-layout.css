@@ -1,0 +1,447 @@
+/* Reference-inspired layout: purple rail, white cards, centered chat, sliding profile. */
+:root {
+  --bg: #f1f4ff;
+  --panel: #fff;
+  --panel-soft: #f5f6ff;
+  --line: #e9eafa;
+  --text: #111a33;
+  --muted: #6d789b;
+  --muted-2: #9ba5c2;
+  --blue: #7652ff;
+  --blue-2: #6845f5;
+  --blue-soft: #f0edff;
+  --blue-soft-2: #f7f5ff;
+  --green: #30bd83;
+  --shadow: 0 10px 35px rgba(68, 66, 160, .065);
+  --radius: 20px;
+}
+body { background: #f3f5ff; color: var(--text); }
+.app-shell {
+  grid-template-columns: 96px minmax(360px, 414px) minmax(540px, 1fr) minmax(320px, 340px);
+  gap: 12px; padding: 12px;
+  background: linear-gradient(135deg, #f2f4ff 0%, #edf1ff 100%);
+}
+.left-rail { background: linear-gradient(180deg, #5f4bd3 0%, #6650d7 50%, #6b55df 100%); border-radius: 16px; padding: 12px 9px 14px; box-shadow: 0 12px 32px rgba(93, 71, 210, .18); }
+/* Keep rail labels visible and wrapped; don't force the rail into icon-only mode. */
+.left-rail .rail-label, .left-rail .rail-user-label { display: inline; }
+.left-rail .rail-button { justify-content: flex-start; gap: 9px; overflow: visible; white-space: normal; text-align: left; }
+.left-rail .rail-label { min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
+.left-rail .rail-user-label { min-width: 0; overflow-wrap: anywhere; line-height: 1.2; }
+.left-rail .rail-brand { width: 100%; overflow: visible; }
+.rail-brand {
+  position: relative;
+  padding: 0 5px;
+  height: 26px;
+  margin-bottom: 9px;
+  justify-content: flex-start;
+}
+.rail-brand .brand-mark,
+.rail-brand-label { display: none !important; }
+.rail-brand::before {
+  content: "☰" !important;
+  display: inline-block;
+  font-family: Arial, sans-serif;
+  font-size: 20px;
+  line-height: 1;
+  color: rgba(255,255,255,.95);
+}
+.rail-user { margin: 2px 0 30px; }
+.rail-user .avatar { width: 49px; height: 49px; border: 2px solid rgba(255,255,255,.72); background: rgba(255,255,255,.18); }
+.rail-user .online-dot { border-color: #6650d7; }
+.rail-nav, .rail-bottom { gap: 9px; }
+.rail-button { min-height: 58px; height: auto; padding: 8px 9px; border-radius: 17px; color: rgba(255,255,255,.93); }
+.rail-button svg { width: 25px; height: 25px; flex: 0 0 25px; }
+.rail-button:hover, .rail-button.active { background: rgba(255,255,255,.23); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.09); }
+.rail-button.active::before { left: -9px; top: 12px; bottom: 12px; width: 3px; }
+.rail-bottom { padding-top: 14px; }
+.list-pane, .chat-pane, .profile-pane { border: 1px solid rgba(230,232,250,.95); border-radius: 21px; box-shadow: 0 8px 28px rgba(65,73,147,.045); background: #fff; }
+.list-pane { padding: 22px 16px 12px; }
+.list-header { margin-bottom: 16px; }
+.list-header .eyebrow { display: none; }
+.list-header h1 { font-size: 28px; letter-spacing: -.055em; margin: 0; }
+.list-header .icon-button { width: 49px; height: 49px; border-radius: 16px; background: #f1eeff; color: #704cff; }
+.list-header .icon-button svg { width: 26px; height: 26px; }
+.search-box { height: 49px; border: 0; border-radius: 15px; background: #f4f5ff; padding: 0 14px; gap: 11px; }
+.search-box input { font-size: 13px; }
+.search-box kbd { display: none; }
+.list-tabs { gap: 3px; margin: 13px 0 13px; padding: 3px; border-radius: 14px; background: #f7f7ff; }
+.list-tabs button { padding: 12px 6px; font-size: 12px; font-weight: 650; border-radius: 12px; }
+.list-tabs button.active { color: #6845f5; background: #eeeaff; box-shadow: none; position: relative; }
+.list-tabs button.active::after { content: ""; position: absolute; width: 20px; height: 2px; bottom: -1px; left: calc(50% - 10px); border-radius: 3px; background: #7958ff; }
+.conversation-item { min-height: 74px; gap: 12px; margin-bottom: 5px; padding: 10px 10px; border-radius: 17px; }
+.conversation-item.active { background: #f0edff; border-color: #f0edff; }
+.conversation-item:hover { background: #f8f7ff; }
+.conversation-name { font-size: 14px; color: #11182c; }
+.conversation-time { font-size: 12px; color: #7765e9; }
+.conversation-preview { margin-top: 6px; font-size: 12px; color: #66739a; }
+.conversation-item .avatar { width: 57px; height: 57px; font-size: 14px; }
+.unread-count { background: #7955ff; min-width: 22px; height: 22px; border-radius: 8px; font-size: 11px; }
+.list-footer { padding-top: 13px; font-size: 11px; }
+.chat-pane { position: relative; min-width: 0; }
+.chat-header { min-height: 91px; padding: 16px 20px; gap: 15px; border-bottom: 1px solid #eeeffa; background: #fff; }
+.chat-peer-title b { font-size: 17px; letter-spacing: -.025em; }
+.chat-peer-title small { font-size: 12px; margin-top: 5px; }
+.chat-header-actions { gap: 8px; }
+.chat-header-actions .icon-button { width: 53px; height: 53px; border-radius: 17px; background: #f7f6ff; color: #6e4cff; }
+.chat-header-actions .icon-button:hover { background: #efebff; }
+.chat-header-actions .icon-button svg { width: 23px; height: 23px; }
+.messages { position: relative; padding: 20px 22px 18px; gap: 8px; background: linear-gradient(180deg, #fbfcff 0%, #f7f8ff 100%); }
+.messages::before { content: ""; pointer-events: none; position: absolute; inset: 0; opacity: .22; background-image: radial-gradient(circle at 27% 17%, transparent 0 19px, #e4e7fa 20px 22px, transparent 23px), radial-gradient(circle at 77% 25%, transparent 0 15px, #e4e7fa 16px 18px, transparent 19px), radial-gradient(circle at 34% 73%, transparent 0 15px, #e4e7fa 16px 18px, transparent 19px); }
+.date-chip, .message-row { position: relative; z-index: 1; }
+.date-chip { align-self: center; margin: 0 0 2px; padding: 9px 17px; border-radius: 16px; background: #f0f2fb; color: #596584; font-size: 12px; }
+.message-row { max-width: 86%; }
+.message-bubble { font-size: 14px; line-height: 1.42; padding: 10px 15px; border-radius: 18px; background: #eef0fa; color: #141b2c; box-shadow: none; }
+.message-row.mine .message-bubble { background: linear-gradient(135deg, #7c5bff 0%, #6d49f4 100%); color: #fff; box-shadow: 0 8px 16px rgba(113,78,247,.1); }
+.message-meta { margin-top: 3px; font-size: 10px; color: #8b96b3; gap: 7px; }
+.message-row.mine .message-meta { color: #8273d8; }
+.composer { padding: 13px 17px 13px; background: #fff; border-top: 1px solid #eff0fa; }
+.composer-main { gap: 9px; }
+.composer-tool { width: 54px; height: 54px; border-radius: 17px; background: #f6f5ff; color: #7652ff; }
+.composer-input-wrap textarea { min-height: 54px; padding: 17px 17px; font-size: 13px; border: 0; border-radius: 17px; background: #f5f6ff; }
+.algorithm-picker { height: 54px; border: 0; border-radius: 17px; background: #f5f5ff; color: #5d6690; padding: 0 13px; }
+.send-button { width: 58px; height: 58px; border-radius: 18px; background: linear-gradient(140deg,#815cff,#6945f3); box-shadow: 0 10px 20px rgba(110,76,244,.19); }
+.send-button svg { width: 23px; height: 23px; }
+.composer-footer { margin-top: 9px; font-size: 11px; color: #7c87a8; }
+.encryption-note svg { color: #32b982; }
+.profile-pane { background: #fff; }
+.profile-header { min-height: 55px; padding: 10px 14px 10px 18px; border-bottom: 1px solid #f0f1fb; }
+.profile-header .eyebrow { display: none; }
+.profile-header .icon-button { margin-left: auto; }
+/* Hide the profile panel when its open-state class is removed. */
+@media (min-width: 1021px) {
+  .app-shell:not(.profile-open) { grid-template-columns: 96px minmax(360px, 414px) minmax(0, 1fr); }
+  .app-shell:not(.profile-open) .profile-pane { display: none; }
+}
+.profile-content { padding: 20px 18px; }
+.profile-hero { padding: 0 0 22px; }
+.profile-avatar-wrap .avatar { width: 120px; height: 120px; border-width: 4px; }
+.profile-hero h2 { font-size: 21px; margin: 2px 0 8px; }
+.profile-username { font-size: 12px; }
+.profile-actions { gap: 8px; margin-bottom: 24px; }
+.profile-actions .btn { min-height: 49px; border-radius: 13px; font-size: 12px; }
+.profile-section { margin-top: 22px; }
+.profile-section h3 { font-size: 15px; margin-bottom: 13px; }
+.info-row { padding: 12px 10px; font-size: 11px; gap: 8px; }
+.action-row { padding: 14px 12px; font-size: 12px; }
+.avatar-photo { overflow: hidden; padding: 0; }
+.avatar-photo::after { display: none; }
+.avatar-photo img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.avatar-photo .online-dot { z-index: 2; }
+@media (min-width: 1500px) {
+  .app-shell { grid-template-columns: 96px minmax(370px,414px) minmax(540px,1fr) minmax(320px,340px); gap: 12px; padding: 12px; }
+  .app-shell:not(.profile-open) { grid-template-columns: 96px minmax(370px,414px) minmax(0,1fr); }
+}
+@media (max-width: 1390px) {
+  .app-shell { grid-template-columns: 96px minmax(290px,340px) minmax(380px,1fr) 290px; gap: 9px; padding: 9px; }
+  .app-shell:not(.profile-open) { grid-template-columns: 96px minmax(290px,340px) minmax(0,1fr); }
+  .chat-header-actions { gap: 3px; }
+  .chat-header-actions .icon-button { width: 43px; height: 43px; }
+  .profile-content { padding: 17px 13px; }
+  .left-rail { padding-left: 7px; padding-right: 7px; }
+  .rail-button { padding-left: 7px; padding-right: 7px; font-size: 12px; }
+}
+@media (max-width: 1020px) {
+  .app-shell { grid-template-columns: 62px minmax(250px,300px) minmax(0,1fr); }
+  .left-rail .rail-label, .left-rail .rail-user-label, .rail-brand-label { display: none; }
+  .left-rail .rail-button { justify-content: center; padding: 8px 4px; }
+  .left-rail .rail-brand { justify-content: center; }
+  .left-rail .rail-brand .brand-mark,
+  .left-rail .rail-brand-label { display: none !important; }
+  .left-rail .rail-brand::before { content: "☰" !important; font-size: 18px; color: rgba(255,255,255,.95); }
+  .profile-pane { width: min(330px,calc(100vw - 25px)); }
+  .profile-avatar-wrap .avatar { width: 104px; height: 104px; }
+}
+@media (max-width: 760px) {
+  .app-shell { grid-template-columns: 56px minmax(0,1fr); }
+  .chat-header-actions .icon-button { width: 34px; height: 36px; }
+  .chat-header-actions .icon-button:nth-child(1), .chat-header-actions .icon-button:nth-child(2) { display: none; }
+  .messages { padding: 20px 12px; }
+  .message-bubble { font-size: 13px; padding: 10px 12px; }
+  .composer-tool { width: 36px; height: 42px; }
+  .composer-input-wrap textarea, .algorithm-picker { min-height: 42px; height: 42px; }
+  .send-button { width: 42px; height: 42px; }
+}
+
+
+/* FINAL RAIL FIX: desktop navigation labels must fit instead of wrapping vertically. */
+@media (min-width: 1021px) {
+  .app-shell {
+    grid-template-columns: 150px minmax(290px, 414px) minmax(380px, 1fr) minmax(280px, 320px);
+  }
+  .app-shell:not(.profile-open) {
+    grid-template-columns: 150px minmax(290px, 414px) minmax(0, 1fr);
+  }
+  .left-rail {
+    min-width: 0;
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+  .left-rail .rail-label,
+  .left-rail .rail-user-label,
+  .left-rail .rail-brand-label {
+    display: inline !important;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+  .left-rail .rail-brand {
+    justify-content: flex-start;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .left-rail .rail-brand::before { content: none !important; }
+  .left-rail .brand-mark { display: inline-flex !important; flex: 0 0 auto; }
+  .left-rail .rail-button {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 9px 10px;
+    white-space: normal;
+    text-align: left;
+  }
+  .left-rail .rail-button svg {
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+  }
+  .left-rail .rail-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    line-height: 1.25;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+  .left-rail .rail-user {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    margin-bottom: 22px;
+  }
+  .left-rail .rail-user .avatar { flex: 0 0 44px; width: 44px; height: 44px; }
+  .left-rail .rail-user-label { flex: 1 1 auto; min-width: 0; line-height: 1.25; }
+}
+@media (min-width: 1500px) {
+  .app-shell { grid-template-columns: 150px minmax(370px,414px) minmax(540px,1fr) minmax(300px,330px); }
+  .app-shell:not(.profile-open) { grid-template-columns: 150px minmax(370px,414px) minmax(0,1fr); }
+}
+@media (max-width: 1390px) and (min-width: 1021px) {
+  .app-shell { grid-template-columns: 130px minmax(270px,320px) minmax(360px,1fr) 270px; }
+  .app-shell:not(.profile-open) { grid-template-columns: 130px minmax(270px,320px) minmax(0,1fr); }
+  .left-rail .rail-button { padding-left: 7px; padding-right: 7px; gap: 7px; }
+  .left-rail .rail-label { font-size: 12px; }
+}
+@media (max-width: 1020px) {
+  .app-shell { grid-template-columns: 62px minmax(250px,300px) minmax(0,1fr); }
+  .left-rail .rail-label,
+  .left-rail .rail-user-label,
+  .left-rail .rail-brand-label { display: none !important; }
+  .left-rail .rail-button { justify-content: center; padding: 8px 4px; }
+}
+
+
+/* Avatar fallback: center initials such as TH when no photo is selected. */
+.avatar:not(.avatar-photo) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1;
+}
+
+
+/* Rail brand: show only the hamburger control; hide SecureChat text/logo mark. */
+.left-rail .rail-brand {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 5px;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.left-rail .rail-brand .brand-mark,
+.left-rail .rail-brand .rail-brand-label,
+.left-rail .rail-brand .brand-label,
+.left-rail .rail-brand > span:not(.hamburger-icon) {
+  display: none !important;
+}
+.left-rail .rail-brand::before {
+  content: "☰" !important;
+  display: inline-block !important;
+  font-family: Arial, sans-serif;
+  font-size: 20px;
+  line-height: 1;
+  color: rgba(255,255,255,.96);
+}
+
+/* Expanded rail: show avatar and user name. Collapsed rail: CSS class hooks below. */
+.left-rail .rail-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.left-rail .rail-user-label {
+  display: block !important;
+  min-width: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: normal;
+}
+.left-rail .rail-label {
+  display: inline !important;
+  min-width: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: normal;
+}
+.left-rail .rail-button {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-start;
+}
+.left-rail .rail-button svg {
+  flex: 0 0 25px;
+}
+
+/* If the hamburger toggles .collapsed or .rail-collapsed on the rail, use icon-only mode. */
+.left-rail.collapsed .rail-label,
+.left-rail.collapsed .rail-user-label,
+.left-rail.collapsed .rail-brand-label,
+.left-rail.rail-collapsed .rail-label,
+.left-rail.rail-collapsed .rail-user-label,
+.left-rail.rail-collapsed .rail-brand-label {
+  display: none !important;
+}
+.left-rail.collapsed .rail-button,
+.left-rail.rail-collapsed .rail-button {
+  justify-content: center;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.left-rail.collapsed .rail-user,
+.left-rail.rail-collapsed .rail-user {
+  justify-content: center;
+}
+.left-rail.collapsed .rail-brand,
+.left-rail.rail-collapsed .rail-brand {
+  justify-content: center;
+}
+
+/* Ensure settings/gear icons use the same clear, consistent size as other rail icons. */
+.left-rail .rail-button[aria-label*="Cài đặt"] svg,
+.left-rail .rail-button[title*="Cài đặt"] svg,
+.left-rail .rail-button[data-page="settings"] svg,
+.left-rail .rail-button.settings-button svg {
+  width: 25px;
+  height: 25px;
+  stroke-width: 2;
+}
+
+
+/* Rail header layout: hamburger, avatar and account name share one row. */
+.left-rail .rail-brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  height: 32px;
+  margin: 0 0 10px;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+.left-rail .rail-brand::before {
+  content: "☰" !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  font: 20px/1 Arial, sans-serif;
+  color: #fff;
+}
+.left-rail .rail-brand .brand-mark,
+.left-rail .rail-brand .rail-brand-label,
+.left-rail .rail-brand .brand-label,
+.left-rail .rail-brand > span {
+  display: none !important;
+}
+.left-rail .rail-user {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 0 0 24px;
+  min-width: 0;
+}
+.left-rail .rail-user .avatar {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.left-rail .rail-user-label {
+  display: block !important;
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* Collapsed rail state: leave only icons visible. */
+.left-rail.collapsed,
+.left-rail.rail-collapsed {
+  padding-left: 7px;
+  padding-right: 7px;
+}
+.left-rail.collapsed .rail-user-label,
+.left-rail.rail-collapsed .rail-user-label,
+.left-rail.collapsed .rail-label,
+.left-rail.rail-collapsed .rail-label {
+  display: none !important;
+}
+.left-rail.collapsed .rail-brand,
+.left-rail.rail-collapsed .rail-brand {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+.left-rail.collapsed .rail-user,
+.left-rail.rail-collapsed .rail-user {
+  justify-content: center;
+}
+.left-rail.collapsed .rail-button,
+.left-rail.rail-collapsed .rail-button {
+  justify-content: center;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+
+/* SecureChat layout fix: keep desktop rail labels visible and profile closed by default. */
+@media (min-width: 761px) {
+  #appView.rail-expanded { grid-template-columns: 190px minmax(245px, 300px) minmax(360px, 1fr) minmax(0, 300px) !important; }
+  #appView.rail-expanded:not(.profile-open) { grid-template-columns: 190px minmax(245px, 330px) minmax(360px, 1fr) !important; }
+  #appView.rail-expanded:not(.profile-open) .profile-pane { display: none !important; }
+  #appView.rail-expanded .rail-brand-label,
+  #appView.rail-expanded .rail-label,
+  #appView.rail-expanded .rail-user-label { display: inline !important; }
+  #appView.rail-expanded .rail-user { width: 100%; display: flex; align-items: center; gap: 10px; padding: 0 4px; }
+  #appView.rail-expanded .rail-button { justify-content: flex-start; padding: 0 12px; }
+}
+@media (max-width: 760px) {
+  #appView .rail-brand-label, #appView .rail-label, #appView .rail-user-label { display: none !important; }
+}

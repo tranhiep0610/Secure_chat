@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+
+<html lang="vi">
+
+<head>
+
+    <meta charset="UTF-8">
+
+
+    <meta
+
+        name="viewport"
+
+        content="width=device-width, initial-scale=1.0"
+
+    >
+
+
+    <title>Secure Chat</title>
+
+
+    <link
+
+        rel="stylesheet"
+
+        href="./css/chat.css"
+
+    >
+
+
+    <link rel="stylesheet" href="./css/chat-extras.css">
+    <link rel="stylesheet" href="./css/social-ui.css">
+    <link rel="stylesheet" href="./css/notification-ui.css">
+    <link rel="stylesheet" href="./css/profile-ui.css">
+    <link rel="stylesheet" href="./css/blocked-ui.css">
+    <link rel="stylesheet" href="./css/auth-v2.css">
+
+
+</head>
+
+
+<body>
+
+
+<div class="app-shell">
+
+
+    <!-- ==============================
+
+         THANH MENU DỌC
+
+    =============================== -->
+
+    <aside class="main-rail">
+
+
+    <div class="rail-top">
+
+
+        <!-- TIN NHẮN -->
+
+        <button
+
+            id="navMessages"
+
+            class="rail-icon active"
+
+            type="button"
+
+            title="Tin nhắn"
+
+        >
+
+            <svg viewBox="0 0 24 24">
+
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8
+
+                8.5 8.5 0 0 1-7.6 4.7
+
+                8.38 8.38 0 0 1-3.8-.9
+
+                L3 21l1.9-5.7
+
+                a8.38 8.38 0 0 1-.9-3.8
+
+                8.5 8.5 0 0 1 4.7-7.6
+
+                8.38 8.38 0 0 1 3.8-.9
+
+                h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+
+            </svg>
+
+        </button>
+
+
+        <!-- BẠN BÈ -->
+
+        <button
+
+            id="navFriends"
+
+            class="rail-icon"
+
+            type="button"
+
+            title="Bạn bè"
+
+        >
+
+            <svg viewBox="0 0 24 24">
+
+
+                <path d="M16 21v-2
+
+                a4 4 0 0 0-4-4H6
+
+                a4 4 0 0 0-4 4v2"/>
+
+
+                <circle
+
+                    cx="9"
+
+                    cy="7"
+
+                    r="4"
+
+                />
+
+
+                <path d="M22 21v-2
+
+                a4 4 0 0 0-3-3.87"/>
+
+
+                <path d="M16 3.13
+
+                a4 4 0 0 1 0 7.75"/>
+
+
+            </svg>
+
+        </button>
+
+
+        <!-- TIN NHẮN CHỜ -->
+
+        <button
+
+            id="navRequests"
+
+            class="rail-icon"
+
+            type="button"
+
+            title="Tin nhắn chờ"
+
+        >
+
+            <svg viewBox="0 0 24 24">
+
+
+                <rect
+
+                    x="3"
+
+                    y="3"
+
+                    width="18"
+
+                    height="18"
+
+                    rx="4"
+
+                />
+
+
+                <path d="M8 12h8"/>
+
+                <path d="M12 8v8"/>
+
+
+            </svg>
+
+        </button>
+
+
+        <!-- ĐÃ CHẶN -->
+
+        <button
+
+            id="navBlocked"
+
+            class="rail-icon"
+
+            type="button"
+
+            title="Đã chặn"
+
+        >
+
+            <svg viewBox="0 0 24 24">
+
+
+                <circle
+
+                    cx="12"
+
+                    cy="12"
+
+                    r="9"
+
+                />
+
+
+                <path d="M5.6 5.6l12.8 12.8"/>
+
+
+            </svg>
+
+        </button>
+
+
+    </div>
+
+
+    <div class="rail-bottom">
+
+
+        <!-- PROFILE -->
+
+        <button
+
+            id="btnProfile"
+
+            class="profile-button"
+
+            type="button"
+
+            title="Hồ sơ cá nhân"
+
+        >
+
+            <div
+
+                id="meAvatar"
+
+                class="rail-avatar"
+
+            >
+
+                ?
+
+            </div>
+
+        </button>
+
+
+        <!-- GIAO DIỆN -->
+
+        <button
+
+            id="btnTheme"
+
+            class="rail-icon"
+
+            type="button"
+
+            title="Đổi giao diện"
+
+        >
+
+            <svg viewBox="0 0 24 24">
+
+
+                <circle
+
+                    cx="12"
+
+                    cy="12"
+
+                    r="4"
+
+                />
+
+
+                <path d="M12 2v2"/>
+
+                <path d="M12 20v2"/>
+
+                <path d="M4.93 4.93l1.41 1.41"/>
+
+                <path d="M17.66 17.66l1.41 1.41"/>
+
+                <path d="M2 12h2"/>
+
+                <path d="M20 12h2"/>
+
+
+            </svg>
+
+        </button>
+
+
+        <!-- ĐĂNG XUẤT -->
+
+        <button
+
+            id="btnLogout"
+
+            class="rail-icon"
+
+            type="button"
+
+            title="Đăng xuất"
+
+        >
+
+            <svg viewBox="0 0 24 24">
+
+
+                <path d="M9 21H5
+
+                a2 2 0 0 1-2-2V5
+
+                a2 2 0 0 1 2-2h4"/>
+
+
+                <path d="M16 17l5-5-5-5"/>
+
+
+                <path d="M21 12H9"/>
+
+
+            </svg>
+
+        </button>
+
+</div>
+
+
+</aside>
+
+
+    <!-- ==============================
+
+         DANH SÁCH HỘI THOẠI
+
+    =============================== -->
+
+    <aside class="conversation-sidebar">
+
+
+        <header class="sidebar-brand">
+
+
+            <div class="brand-area">
+
+
+                <div class="brand-logo">
+
+                    S
+
+                </div>
+
+
+                <div>
+
+
+                    <strong>
+
+                        SecureChat
+
+                    </strong>
+
+
+                    <small id="meDisplayName">
+
+                        ...
+
+                    </small>
+
+
+                </div>
+
+
+            </div>
+
+
+            <div class="brand-actions">
+
+                <button
+                    id="btnNotifications"
+                    class="brand-action-btn"
+                    type="button"
+                    title="Thông báo"
+                    aria-label="Thông báo"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/>
+                        <path d="M10 21h4"/>
+                    </svg>
+                    <span
+                        id="notificationBadge"
+                        class="action-badge"
+                        hidden
+                    >0</span>
+                </button>
+
+                <button
+                    id="btnAddFriend"
+                    class="brand-action-btn"
+                    type="button"
+                    title="Thêm bạn"
+                    aria-label="Thêm bạn"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/>
+                        <path d="M19 8v6"/>
+                        <path d="M16 11h6"/>
+                    </svg>
+                </button>
+
+                <button
+                    id="btnNewChat"
+                    class="brand-action-btn"
+                    type="button"
+                    title="Bắt đầu chat"
+                    aria-label="Bắt đầu chat"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/>
+                    </svg>
+                </button>
+
+            </div>
+
+
+        </header>
+
+
+        <!-- SEARCH -->
+
+        <div class="sidebar-search">
+
+
+            <svg viewBox="0 0 24 24">
+
+                <circle
+
+                    cx="11"
+
+                    cy="11"
+
+                    r="7"
+
+                />
+
+
+                <path d="M20 20l-3.8-3.8" />
+
+            </svg>
+
+
+            <input
+
+                id="userSearch"
+
+                type="search"
+
+                placeholder="Tìm kiếm cuộc trò chuyện..."
+
+                autocomplete="off"
+
+            >
+
+
+        </div>
+
+
+        <!-- CONNECTION -->
+
+        <div class="connection-row">
+
+
+            <span
+
+                id="connectionDot"
+
+                class="connection-dot is-offline"
+
+            ></span>
+
+
+            <span id="connectionText">
+
+                Đang kết nối...
+
+            </span>
+
+
+            <span
+
+                id="userCount"
+
+                class="user-count"
+
+            >
+
+                0
+
+            </span>
+
+
+        </div>
+
+
+        <!-- USERS -->
+
+        <div
+
+            id="userList"
+
+            class="user-list"
+
+        ></div>
+
+
+        <div class="sidebar-empty-hint">
+
+
+            <div class="empty-chat-icon">
+
+                ▣
+
+            </div>
+
+
+            <span>
+
+                Chọn một người để trò chuyện
+
+            </span>
+
+
+        </div>
+
+
+    </aside>
+
+
+    <!-- ==============================
+
+         CHAT
+
+    =============================== -->
+
+    <main class="chat-content">
+
+
+        <!-- HEADER -->
+
+        <header class="chat-header">
+
+
+            <div
+
+                id="peerAvatar"
+
+                class="peer-avatar"
+
+            >
+
+                ?
+
+            </div>
+
+
+            <div class="peer-info">
+
+
+                <strong id="peerName">
+
+                    SecureChat
+
+                </strong>
+
+
+                <span id="peerStatus">
+
+                    Chưa chọn cuộc trò chuyện
+
+                </span>
+
+
+            </div>
+
+
+            <div class="chat-header-actions">
+
+
+                <button
+
+                    id="btnOpenKey"
+
+                    type="button"
+
+                    class="header-button"
+
+                    disabled
+
+                    title="Quản lý khóa"
+
+                >
+
+                    🔐
+
+
+                    <span>
+
+                        Khóa
+
+                    </span>
+
+                </button>
+
+
+            </div>
+
+
+        </header>
+
+
+        <!-- NOTICE -->
+
+        <div
+
+            id="chatNotice"
+
+            class="chat-notice"
+
+            hidden
+
+        ></div>
+
+
+        <!-- ==============================
+
+             MESSAGE AREA
+
+        =============================== -->
+
+        <section
+
+            id="messagesPanel"
+
+            class="messages-panel"
+
+        >
+
+
+            <button
+
+                id="btnLoadMore"
+
+                class="load-more"
+
+                type="button"
+
+                hidden
+
+            >
+
+                Tải tin nhắn cũ hơn
+
+            </button>
+
+
+            <!-- WELCOME -->
+
+            <div
+
+                id="emptyState"
+
+                class="welcome-screen"
+
+            >
+
+
+                <div class="welcome-inner">
+
+
+                    <div class="welcome-symbol">
+
+                        🔐
+
+                    </div>
+
+
+                    <h1>
+
+                        Chào mừng đến SecureChat
+
+                    </h1>
+
+
+                    <p>
+
+                        Chọn một cuộc trò chuyện từ danh sách
+
+                        <br>
+
+                        bên trái để bắt đầu nhắn tin.
+
+                    </p>
+
+
+                    <span>
+
+                        Tin nhắn được bảo vệ bằng AES / DES
+
+                    </span>
+
+
+                </div>
+
+
+            </div>
+
+
+            <!-- JS RENDER MESSAGE -->
+
+            <div
+
+                id="messageList"
+
+                class="message-list"
+
+            ></div>
+
+
+        </section>
+
+
+        <!-- ==============================
+
+             CRYPTO BAR
+
+        =============================== -->
+
+        <section class="crypto-panel">
+
+
+            <div class="algorithm-box">
+
+
+                <span class="crypto-title">
+
+                    🔒 Mã hóa
+
+                </span>
+
+
+                <select id="algorithmSelect">
+
+
+                    <option
+
+                        value="AES-GCM"
+
+                        selected
+
+                    >
+
+                        AES-GCM
+
+                    </option>
+
+
+                    <option value="DES-CBC">
+
+                        DES-CBC
+
+                    </option>
+
+
+                </select>
+
+
+            </div>
+
+
+            <span class="crypto-description">
+
+                AES-GCM được khuyến nghị.
+
+                DES phục vụ học tập và so sánh.
+
+            </span>
+
+
+            <div class="current-key">
+
+
+                🔑
+
+
+                <span id="keyStatusText">
+
+                    Chưa có khóa
+
+                </span>
+
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ==============================
+
+             COMPOSER
+
+        =============================== -->
+
+        <section class="message-composer">
+
+
+            <form
+    id="messageForm"
+    class="composer-form"
+>
+
+    <!-- EMOJI -->
+    <div class="emoji-wrap">
+
+        <button
+            id="btnEmoji"
+            class="emoji-button"
+            type="button"
+            title="Emoji"
+        >
+            😊
+        </button>
+
+
+        <div
+            id="emojiPicker"
+            class="emoji-picker"
+            hidden
+        >
+
+            <button type="button" data-emoji="😀">😀</button>
+            <button type="button" data-emoji="😂">😂</button>
+            <button type="button" data-emoji="❤️">❤️</button>
+            <button type="button" data-emoji="👍">👍</button>
+            <button type="button" data-emoji="😢">😢</button>
+
+        </div>
+
+    </div>
+
+
+    <textarea
+        id="messageInput"
+        rows="1"
+        maxlength="16000"
+        placeholder="Nhập tin nhắn..."
+        disabled
+    ></textarea>
+
+
+    <button
+        id="btnSend"
+        class="send-button"
+        type="submit"
+        disabled
+    >
+        ➤
+    </button>
+
+</form>
+
+
+            <small id="draftHint">
+
+                Tin nhắn được mã hóa tại trình duyệt
+
+                trước khi gửi.
+
+            </small>
+
+
+        </section>
+
+
+    </main>
+
+
+</div>
+
+
+<!-- FEATURE PAGE: nằm ngoài main-rail để không bị bó chiều rộng -->
+<!-- =========================================
+
+     TRANG CHỨC NĂNG
+
+========================================= -->
+
+<section
+
+    id="featurePage"
+
+    class="feature-page"
+
+    hidden
+
+>
+
+
+    <header class="feature-header">
+
+
+        <div>
+
+            <h1 id="featureTitle">
+
+                Bạn bè
+
+            </h1>
+
+
+            <p id="featureDescription">
+
+                Quản lý danh sách bạn bè
+
+            </p>
+
+        </div>
+
+
+    </header>
+
+
+    <div class="feature-toolbar">
+
+
+        <div class="feature-search">
+
+
+            <span>⌕</span>
+
+
+            <input
+
+                id="featureSearch"
+
+                type="search"
+
+                placeholder="Tìm kiếm..."
+
+            >
+
+
+        </div>
+
+
+    </div>
+
+
+    <div
+
+        id="featureContent"
+
+        class="feature-content"
+
+    >
+
+
+        <div class="feature-empty">
+
+
+            <div class="feature-empty-icon">
+
+                👥
+
+            </div>
+
+
+            <h2>
+
+                Danh sách bạn bè
+
+            </h2>
+
+
+            <p>
+
+                Dữ liệu bạn bè sẽ được tải từ API.
+
+            </p>
+
+
+        </div>
+
+
+    </div>
+
+
+</section>
+
+
+<!-- =====================================
+
+     MODAL KEY
+
+====================================== -->
+
+<div
+
+    id="keyModal"
+
+    class="key-modal"
+
+    hidden
+
+>
+
+
+    <div
+
+        class="key-modal-overlay"
+
+        data-close-key-modal
+
+    ></div>
+
+
+    <div class="key-modal-card">
+
+
+        <header class="key-modal-header">
+
+
+            <div>
+
+
+                <h2>
+
+                    Quản lý khóa mã hóa
+
+                </h2>
+
+
+                <p>
+
+                    Khóa của cuộc trò chuyện hiện tại
+
+                </p>
+
+
+            </div>
+
+
+            <button
+
+                id="btnCloseKey"
+
+                type="button"
+
+                class="modal-close"
+
+            >
+
+                ×
+
+            </button>
+
+
+        </header>
+
+
+        <div class="field">
+
+
+            <label for="keyAlgorithm">
+
+                Thuật toán
+
+            </label>
+
+
+            <input
+
+                id="keyAlgorithm"
+
+                readonly
+
+            >
+
+
+        </div>
+
+
+        <div class="field">
+
+
+            <label for="keyIdInput">
+
+                Key ID
+
+            </label>
+
+
+            <input
+
+                id="keyIdInput"
+
+                placeholder="Nhập Key ID"
+
+            >
+
+
+        </div>
+
+
+        <div class="field">
+
+
+            <label
+
+                id="keySecretLabel"
+
+                for="keySecretInput"
+
+            >
+
+                Khóa bí mật
+
+            </label>
+
+
+            <textarea
+
+                id="keySecretInput"
+
+                spellcheck="false"
+
+                placeholder="Nhập hoặc tạo khóa..."
+
+            ></textarea>
+
+
+            <small id="keyHelpText"></small>
+
+
+        </div>
+
+
+        <div
+
+            id="keyModalError"
+
+            class="key-error"
+
+        ></div>
+
+
+       <footer class="key-actions">
+
+    <button
+        id="btnGenerateKey"
+        type="button"
+    >
+        ✦ Tạo khóa
+    </button>
+
+    <button
+        id="btnCopyKey"
+        type="button"
+    >
+        Sao chép
+    </button>
+
+    <button
+        id="btnDeleteKey"
+        type="button"
+        class="key-delete"
+    >
+        Xóa khóa
+    </button>
+
+    <button
+        id="btnSaveKey"
+        type="button"
+        class="key-save"
+    >
+        Sử dụng khóa
+    </button>
+
+</footer>
+
+
+    </div>
+
+
+</div>
+<!-- =====================================================
+
+     START CHAT MODAL
+
+===================================================== -->
+
+
+<div
+
+    id="newChatModal"
+
+    class="secure-modal"
+
+    hidden
+
+>
+
+
+    <div
+
+        id="newChatBackdrop"
+
+        class="secure-modal-backdrop"
+
+    ></div>
+
+
+    <section
+
+        class="secure-modal-box new-chat-modal"
+
+        role="dialog"
+
+        aria-modal="true"
+
+        aria-labelledby="newChatTitle"
+
+    >
+
+
+        <!-- HEADER -->
+
+
+        <header class="secure-modal-header">
+
+
+            <div>
+
+                <h2 id="newChatTitle">
+
+                    Bắt đầu chat
+
+                </h2>
+
+
+                <p>
+
+                    Chọn một người bạn để bắt đầu trò chuyện
+
+                </p>
+
+            </div>
+
+
+            <button
+
+                id="btnCloseNewChat"
+
+                class="secure-modal-close"
+
+                type="button"
+
+                aria-label="Đóng"
+
+            >
+
+                ×
+
+            </button>
+
+
+        </header>
+
+
+        <!-- SEARCH -->
+
+
+        <div class="new-chat-search">
+
+
+            <span class="new-chat-search-icon">
+
+                🔍
+
+            </span>
+
+
+            <input
+
+                id="newChatSearch"
+
+                type="search"
+
+                placeholder="Tìm theo tên hoặc username..."
+
+                autocomplete="off"
+
+            >
+
+
+        </div>
+
+
+        <!-- CONTENT -->
+
+
+        <div
+
+            id="newChatContent"
+
+            class="new-chat-content"
+
+        >
+
+
+            <div class="new-chat-empty">
+
+
+                <div class="new-chat-empty-icon">
+
+                    👥
+
+                </div>
+
+
+                <strong>
+
+                    Chọn bạn bè để nhắn tin
+
+                </strong>
+
+
+                <span>
+
+                    Danh sách bạn bè sẽ xuất hiện ở đây.
+
+                </span>
+
+
+            </div>
+
+
+        </div>
+
+
+        <!-- FOOTER -->
+
+
+        <footer class="secure-modal-footer">
+
+
+            <button
+
+                id="btnCancelNewChat"
+
+                class="modal-btn-secondary"
+
+                type="button"
+
+            >
+
+                Hủy
+
+            </button>
+
+
+        </footer>
+
+
+    </section>
+
+
+</div>
+
+
+<!-- =====================================================
+     ADD FRIEND MODAL
+===================================================== -->
+<div
+    id="addFriendModal"
+    class="secure-modal"
+    hidden
+>
+    <div
+        id="addFriendBackdrop"
+        class="secure-modal-backdrop"
+    ></div>
+
+    <section
+        class="secure-modal-box add-friend-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="addFriendTitle"
+    >
+        <header class="secure-modal-header">
+            <div>
+                <h2 id="addFriendTitle">Thêm bạn bè</h2>
+                <p>Tìm tài khoản và gửi lời mời kết bạn</p>
+            </div>
+
+            <button
+                id="btnCloseAddFriend"
+                class="secure-modal-close"
+                type="button"
+                aria-label="Đóng"
+            >
+                ×
+            </button>
+        </header>
+
+        <div class="new-chat-search">
+            <span class="new-chat-search-icon">🔍</span>
+
+            <input
+                id="addFriendSearch"
+                type="search"
+                placeholder="Nhập username..."
+                autocomplete="off"
+            >
+        </div>
+
+        <div
+            id="addFriendContent"
+            class="new-chat-content"
+        >
+            <div class="new-chat-empty">
+                <div class="new-chat-empty-icon">👤+</div>
+
+                <strong>Tìm người dùng</strong>
+
+                <span>
+                    Nhập username để tìm tài khoản muốn kết bạn.
+                </span>
+            </div>
+        </div>
+
+        <footer class="secure-modal-footer">
+            <button
+                id="btnCancelAddFriend"
+                class="modal-btn-secondary"
+                type="button"
+            >
+                Đóng
+            </button>
+        </footer>
+    </section>
+</div>
+
+
+<!-- =====================================================
+     NOTIFICATION DRAWER
+     Để sẵn hook HTML, JS/CSS sẽ nối ở bước tính năng thông báo.
+===================================================== -->
+<aside
+    id="notificationDrawer"
+    class="notification-drawer"
+    hidden
+    aria-labelledby="notificationTitle"
+>
+    <header class="notification-drawer-header">
+        <div>
+            <h2 id="notificationTitle">Thông báo</h2>
+            <p id="notificationSummary">Chưa có thông báo mới</p>
+        </div>
+
+        <button
+            id="btnCloseNotifications"
+            type="button"
+            aria-label="Đóng thông báo"
+        >
+            ×
+        </button>
+    </header>
+
+    <div class="notification-tabs">
+        <button
+            id="notificationTabAll"
+            type="button"
+            class="active"
+        >
+            Tất cả
+        </button>
+
+        <button
+            id="notificationTabUnread"
+            type="button"
+        >
+            Chưa đọc
+        </button>
+
+        <button
+            id="btnMarkAllNotifications"
+            type="button"
+        >
+            Đánh dấu tất cả
+        </button>
+    </div>
+
+    <div
+        id="notificationList"
+        class="notification-list"
+    >
+        <div class="new-chat-empty">
+            <div class="new-chat-empty-icon">🔔</div>
+            <strong>Chưa có thông báo</strong>
+            <span>Thông báo mới sẽ xuất hiện ở đây.</span>
+        </div>
+    </div>
+</aside>
+
+
+<!-- =====================================================
+     SCRIPTS
+===================================================== -->
+<script
+    type="module"
+    src="./js/chat.js"
+></script>
+
+<script
+    type="module"
+    src="./js/chat-extras.js"
+></script>
+
+<script type="module" src="./js/social-ui.js"></script>
+<script type="module" src="./js/notification-ui.js"></script>
+<script type="module" src="./js/profile-ui.js"></script>
+<script type="module" src="./js/blocked-ui.js"></script>
+<script type="module" src="./js/auth-v2.js"></script>
+<script src="./js/theme.js"></script>
+
+
+</body>
+
+</html>

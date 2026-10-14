@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="vi">
+
+<head>
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  >
+
+  <title>
+    Xác thực Email | SecureChat
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="./css/auth-v2.css"
+  >
+</head>
+
+
+<body
+  class="scauth-page"
+  data-page="verify-email"
+>
+
+  <main class="scauth-layout">
+
+    <section class="scauth-left">
+
+      <div class="scauth-brand">
+
+        <div class="scauth-logo">
+          S
+        </div>
+
+        <div>
+          <strong>
+            SecureChat
+          </strong>
+
+          <span>
+            AES / DES SECURE MESSAGING
+          </span>
+        </div>
+
+      </div>
+
+
+      <div class="scauth-hero">
+
+        <span class="scauth-eyebrow">
+          ACCOUNT SECURITY
+        </span>
+
+        <h1>
+          Bảo vệ tài khoản
+          <br>
+
+          <em>
+            bằng Email OTP
+          </em>
+        </h1>
+
+        <p>
+          SecureChat sử dụng email để xác thực tài khoản
+          và khôi phục mật khẩu bằng mã OTP có thời hạn.
+        </p>
+
+      </div>
+
+
+      <div class="scauth-tech">
+
+        <i></i>
+
+        Argon2id · Email OTP · Secure Session
+
+      </div>
+
+    </section>
+
+
+    <section class="scauth-right">
+
+      
+<div class="scauth-card">
+
+  <div class="scauth-card-logo">
+    S
+  </div>
+
+  <h2>
+    Xác thực Email
+  </h2>
+
+  <p>
+    Nhập mã OTP 6 số đã gửi tới
+    <strong id="verifyEmailText"></strong>.
+  </p>
+
+
+  <form
+    id="verifyEmailForm"
+    class="scauth-form"
+  >
+
+    <label>
+      Mã OTP
+
+      <div class="scauth-input">
+        <span>#</span>
+
+        <input
+          id="otpCode"
+          type="text"
+          inputmode="numeric"
+          maxlength="6"
+          placeholder="Nhập 6 số OTP"
+          required
+        >
+      </div>
+    </label>
+
+
+    <div
+      id="authStatus"
+      class="scauth-status"
+    ></div>
+
+
+    <button
+      class="scauth-submit"
+      type="submit"
+    >
+      Xác thực Email
+    </button>
+
+
+    <button
+      id="resendVerificationButton"
+      class="scauth-submit scauth-submit-secondary"
+      type="button"
+    >
+      Gửi lại OTP
+    </button>
+
+  </form>
+
+
+  <div class="scauth-foot">
+
+    <a href="./index.html">
+      ← Quay lại đăng nhập
+    </a>
+
+  </div>
+
+</div>
+
+
+    </section>
+
+  </main>
+
+
+  <script
+    type="module"
+    src="./js/auth-v2.js"
+  ></script>
+
+</body>
+
+</html>

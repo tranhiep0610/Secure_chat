@@ -1,97 +1,46 @@
-const express =
-    require("express");
+const express = require("express");
 
-const router =
-    express.Router();
-
-
-// =====================================================
-// CONTROLLERS
-// =====================================================
+const router = express.Router();
 
 const {
     createOrGetConversation,
     getConversations,
-    getMessages
-} =
-    require("../controllers/message.controller");
+    getMessages,
+    sendMessage
+} = require("../controllers/message.controller");
 
-
-// =====================================================
-// MIDDLEWARE
-// =====================================================
-
-const authMiddleware =
-    require("../middlewares/auth.middleware");
-
+const authMiddleware = require("../middlewares/auth.middleware");
 
 const {
     requireFriendshipWithTarget
-} =
-    require("../middlewares/friendship.middleware");
+} = require("../middlewares/friendship.middleware");
 
 
-// =====================================================
+// POST /api/messages
+// Gửi tin nhắn (controller đã tự kiểm tra bạn bè)
+router.post("/", authMiddleware, (req, res, next) => {
+    console.log("POST /api/messages đã vào route");
+    next();
+}, sendMessage);
+
+
 // POST /api/messages/conversation
-//
-// Tạo mới hoặc lấy lại hội thoại 1-1.
-//
-// body:
-// {
-//     targetUserId: "..."
-// }
-//
-// Điều kiện:
-// - Phải đăng nhập
-// - Hai tài khoản phải là bạn bè
-// =====================================================
-
+// Tạo hoặc lấy hội thoại 1-1 (phải là bạn bè)
 router.post(
     "/conversation",
-
     authMiddleware,
-
     requireFriendshipWithTarget,
-
     createOrGetConversation
 );
 
 
-// =====================================================
 // GET /api/messages/conversations
-//
-// Lấy danh sách các hội thoại
-// của tài khoản hiện tại.
-// =====================================================
-
-router.get(
-    "/conversations",
-
-    authMiddleware,
-
-    getConversations
-);
+// Phải đặt TRƯỚC route "/:conversationId"
+router.get("/conversations", authMiddleware, getConversations);
 
 
-// =====================================================
 // GET /api/messages/:conversationId
-//
-// Lấy lịch sử tin nhắn
-// của một hội thoại.
-// =====================================================
-
-router.get(
-    "/:conversationId",
-
-    authMiddleware,
-
-    getMessages
-);
+router.get("/:conversationId", authMiddleware, getMessages);
 
 
-// =====================================================
-// EXPORT
-// =====================================================
-
-module.exports =
-    router;
+module.exports = router;

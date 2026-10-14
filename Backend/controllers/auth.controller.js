@@ -748,6 +748,7 @@ const verifyRegisterOtp = async (
         const code =
             String(
                 req.body?.code ||
+                req.body?.otp ||
                 ""
             ).trim();
 
@@ -985,9 +986,9 @@ const login = async (
 
 
         const identifier =
-            typeof req.body?.identifier ===
+            typeof (req.body?.identifier ?? req.body?.identity) ===
             "string"
-                ? req.body.identifier.trim()
+                ? String(req.body?.identifier ?? req.body?.identity).trim()
                 : "";
 
 
@@ -1299,6 +1300,7 @@ const resetPassword = async (
         const code =
             String(
                 req.body?.code ||
+                req.body?.otp ||
                 ""
             ).trim();
 

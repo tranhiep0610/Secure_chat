@@ -76,20 +76,13 @@ function isValidId(id) {
 // ======================================================
 
 function publicUser(user) {
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return {
-    _id:
-      String(user._id),
-
-    username:
-      user.username,
-
-    displayName:
-      user.displayName ||
-      user.username
+    id: String(user._id),
+    _id: String(user._id),
+    username: user.username,
+    displayName: user.displayName || user.username
   };
 }
 
@@ -131,108 +124,50 @@ function getOtherUser(
 // DANH SÁCH BẠN BÈ ĐÃ ACCEPT
 // ======================================================
 
-router.get(
-  '/',
-  async (req, res) => {
-    try {
-      const currentUserId =
-        req.currentUserId;
+router.get('/', async (req, res) => {
+  try {
+    const me = req.currentUserId;
 
+    const friendships = await Friendship.find({
+      status: { $in: ['accepted', 'pending'] },
+      $or: [{ userA: me }, { userB: me }]
+    })
+      .populate('userA', 'username displayName')
+      .populate('userB', 'username displayName')
+      .sort({ updatedAt: -1 });
 
-      const friendships =
-        await Friendship
-          .find({
-            status:
-              'accepted',
+    const friends = [];
+    const incoming = [];
+    const outgoing = [];
 
-            $or: [
-              {
-                userA:
-                  currentUserId
-              },
+    for (const f of friendships) {
+      const other = publicUser(getOtherUser(f, me));
+      if (!other) continue;
 
-              {
-                userB:
-                  currentUserId
-              }
-            ]
-          })
+      const item = {
+        ...other,
+        friendshipId: String(f._id),
+        createdAt: f.createdAt
+      };
 
-          .populate(
-            'userA',
-            'username displayName'
-          )
-
-          .populate(
-            'userB',
-            'username displayName'
-          )
-
-          .sort({
-            updatedAt: -1
-          });
-
-
-      const friends =
-        friendships
-          .map(
-            friendship => {
-              const otherUser =
-                getOtherUser(
-                  friendship,
-                  currentUserId
-                );
-
-
-              return {
-                friendshipId:
-                  String(
-                    friendship._id
-                  ),
-
-                user:
-                  publicUser(
-                    otherUser
-                  ),
-
-                friendsSince:
-                  friendship
-                    .respondedAt ||
-                  friendship
-                    .updatedAt
-              };
-            }
-          )
-
-          .filter(
-            item =>
-              item.user
-          );
-
-
-      return res.json({
-        success: true,
-        friends
-      });
+      if (f.status === 'accepted') {
+        friends.push({ ...item, friendsSince: f.respondedAt || f.updatedAt });
+      } else if (String(f.requestedBy) === String(me)) {
+        outgoing.push(item);
+      } else {
+        incoming.push(item);
+      }
     }
 
-    catch (error) {
-      console.error(
-        'GET /api/friends:',
-        error
-      );
-
-
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message:
-            'Không tải được danh sách bạn bè.'
-        });
-    }
+    return res.json({ success: true, friends, incoming, outgoing });
+  } catch (error) {
+    console.error('GET /api/friends:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Không tải được danh sách bạn bè.'
+    });
   }
-);
+});
 
 
 // ======================================================

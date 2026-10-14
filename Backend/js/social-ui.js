@@ -1,9 +1,19 @@
+const IS_LOCAL =
+    ["127.0.0.1", "localhost"].includes(
+        window.location.hostname
+    );
+
 const API_BASE_URL =
-    window.location.protocol === "file:"
-        ? "http://localhost:3000"
-        : window.location.port === "3000"
-            ? window.location.origin
-            : `${window.location.protocol}//${window.location.hostname}:3000`;
+    IS_LOCAL && window.location.port !== "3000"
+        ? "http://127.0.0.1:3000"
+        : window.location.origin;
+
+// const API_BASE_URL =
+//     window.location.protocol === "file:"
+//         ? "http://localhost:3000"
+//         : window.location.port === "3000"
+//             ? window.location.origin
+//             : `${window.location.protocol}//${window.location.hostname}:3000`;
 
 const socialState = {
     me: null,

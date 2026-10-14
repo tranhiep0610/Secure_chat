@@ -1,500 +1,162 @@
-const path = require("path");//
-
+const path = require("path");
 require("dotenv").config();
 
-const express =
-    require("express");
-
-const http =
-    require("http");
-
-const cors =
-    require("cors");
-
-const session =
-    require("express-session");
-
-const MongoStore =
-    require("connect-mongo");
-
-const {
-    Server
-} =
-    require("socket.io");
-
+const express = require("express");
+const http = require("http");
+const cors = require("cors");
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
+const { Server } = require("socket.io");
 
 // =====================================================
 // CONFIG
 // =====================================================
-
-const connectDB =
-    require("./config/database");
-
+const connectDB = require("./config/database");
 
 // =====================================================
 // ROUTES
 // =====================================================
-
-const authRoutes =
-    require("./routes/auth.routes");
-
-const userRoutes =
-    require("./routes/user.routes");
-
-const messageRoutes =
-    require("./routes/message.routes");
-
-const friendRoutes =
-    require("./routes/friend.routes");
-
-const blockRoutes =
-    require("./routes/block.routes");
-
-const profileRoutes =
-    require("./routes/profile.routes");
-
+const authRoutes = require("./routes/auth.routes");
+const userRoutes = require("./routes/user.routes");
+const messageRoutes = require("./routes/message.routes");
+const authMiddleware = require("./middlewares/auth.middleware");
+const { sendMessage, getCurrentUserId } = require("./controllers/message.controller");
+const { sseHandler } = require("./realtime");
+const friendRoutes = require("./routes/friend.routes");
+const blockRoutes = require("./routes/block.routes");
+const profileRoutes = require("./routes/profile.routes");
 
 // =====================================================
 // SOCKET
 // =====================================================
-
-const initChatSocket =
-    require("./sockets/chat.socket");
-
+const initChatSocket = require("./sockets/chat.socket");
 
 // =====================================================
 // EXPRESS + HTTP SERVER
 // =====================================================
+const app = express();
+const server = http.createServer(app);
 
-const app =
-    express();
-
-const server =
-    http.createServer(
-        app
-    );
-
+if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+}
 
 // =====================================================
 // DATABASE
 // =====================================================
-
 connectDB();
-
 
 // =====================================================
 // CORS
 // =====================================================
-
 const allowedOrigins = [
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
     "http://127.0.0.1:5500",
     "http://localhost:5500",
+    "http://127.0.0.1:5501",
+    "http://localhost:5501",
     process.env.FRONTEND_ORIGIN
-]
-    .filter(Boolean);
-
+].filter(Boolean);
 
 app.use(
     cors({
-        origin:
-            function (
-                origin,
-                callback
-            ) {
+        origin(origin, callback) {
+            // Cho phép request không có origin (Postman, curl, cùng origin)
+            if (!origin) return callback(null, true);
 
-                if (!origin) {
-                    return callback(
-                        null,
-                        true
-                    );
-                }
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
 
-
-                if (
-                    allowedOrigins.includes(
-                        origin
-                    )
-                ) {
-                    return callback(
-                        null,
-                        true
-                    );
-                }
-
-
-                return callback(
-                    new Error(
-                        "Origin không được CORS cho phép."
-                    )
-                );
-            },
-
-        credentials:
-            true
+            console.warn("CORS bị chặn:", origin);
+            return callback(new Error("Origin không được CORS cho phép."));
+        },
+        credentials: true
     })
 );
-
 
 // =====================================================
 // BODY PARSER
 // =====================================================
-
-app.use(
-    express.json({
-        limit:
-            "2mb"
-    })
-);
-
-
-app.use(
-    express.urlencoded({
-        extended:
-            true
-    })
-);
-
-// =========================================
-// SERVE FRONTEND
-// =========================================
-
-const frontendPath =
-    path.join(
-        __dirname,
-        "..",
-        "Frontend"
-    );
-
-app.use(
-    express.static(frontendPath)
-);
-
-app.get("/", (req, res) => {
-    res.sendFile(
-        path.join(
-            frontendPath,
-            "index.html"
-        )
-    );
-});
+app.use(express.json({ limit: "8mb" }));
+app.use(express.urlencoded({ extended: true, limit: "8mb" }));
 
 // =====================================================
 // SESSION
 // =====================================================
-
-const sessionTtlMs =
-    Number(
-        process.env
-            .SESSION_TTL_MS ||
-        60 * 60 * 1000
-    );
-
+const sessionTtlMs = Number(
+    process.env.SESSION_TTL_MS || 60 * 60 * 1000
+);
 
 const mongoUrl =
     process.env.MONGODB_URI ||
     process.env.MONGO_URI ||
     "mongodb://127.0.0.1:27017/secure_chat";
 
+const sessionMiddleware = session({
+    name: process.env.SESSION_COOKIE_NAME || "secure_chat.sid",
+    secret: process.env.SESSION_SECRET || "secure-chat-secret-dev",
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
 
-const sessionMiddleware =
-    session({
-        name:
-            process.env
-                .SESSION_COOKIE_NAME ||
-            "secure_chat.sid",
+    store: MongoStore.create({
+        mongoUrl,
+        ttl: Math.ceil(sessionTtlMs / 1000)
+    }),
 
-        secret:
-            process.env
-                .SESSION_SECRET ||
-            "secure-chat-secret-dev",
+    cookie: {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: sessionTtlMs
+    }
+});
 
-        resave:
-            false,
-
-        saveUninitialized:
-            false,
-
-        store:
-            MongoStore.create({
-                mongoUrl:
-                    mongoUrl,
-
-                ttl:
-                    Math.ceil(
-                        sessionTtlMs /
-                        1000
-                    )
-            }),
-
-        cookie: {
-            httpOnly:
-                true,
-
-            sameSite:
-                "lax",
-
-            secure:
-                process.env
-                    .NODE_ENV ===
-                "production",
-
-            maxAge:
-                sessionTtlMs
-        }
-    });
-
-
-// =====================================================
-// SESSION PHẢI ĐỨNG TRƯỚC TẤT CẢ API
-// =====================================================
-
-app.use(
-    sessionMiddleware
-);
-
+// Session phải đứng trước tất cả API
+app.use(sessionMiddleware);
 
 // =====================================================
 // API ROUTES
 // =====================================================
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 
-app.use(
-    "/api/auth",
-    authRoutes
-);
+// Endpoint gửi tin nhắn
+app.post("/api/messages", authMiddleware, sendMessage);
 
+// Kênh đẩy tin tức thì (Server-Sent Events)
+app.get("/api/events", authMiddleware, sseHandler(getCurrentUserId));
 
-app.use(
-    "/api/users",
-    userRoutes
-);
-
-
-app.use(
-    "/api/messages",
-    messageRoutes
-);
+// Các endpoint hội thoại còn lại
+app.use("/api/messages", (req, res, next) => {
+    console.log("MESSAGE API:", req.method, req.originalUrl);
+    next();
+});
+app.use("/api/messages", messageRoutes);
 
 
-app.use(
-    "/api/friends",
-    friendRoutes
-);
+console.log("ĐÃ ĐĂNG KÝ POST /api/messages");
+app.use("/api/friends", friendRoutes);
+app.use("/api/blocks", blockRoutes);
+app.use("/api/profile", profileRoutes);
 
-
-app.use(
-    "/api/blocks",
-    blockRoutes
-);
-
-
-app.use(
-    "/api/profile",
-    profileRoutes
-);
-
+app.get("/api/health", (req, res) => {
+    return res.json({
+        success: true,
+        server: "Secure Chat",
+        status: "online",
+        timestamp: new Date().toISOString()
+    });
+});
 
 // =====================================================
-// TEST / HEALTH CHECK
-// =====================================================
+// SERVE FRONTEND (nếu thư mục Frontend tồn tại)
+// ============================================
 
-app.get(
-    "/",
-    (
-        req,
-        res
-    ) => {
+const PORT = Number(process.env.PORT) || 3000;
 
-        return res.json({
-            success:
-                true,
-
-            message:
-                "Secure Chat server running"
-        });
-    }
-);
-
-
-app.get(
-    "/api/health",
-    (
-        req,
-        res
-    ) => {
-
-        return res.json({
-            success:
-                true,
-
-            server:
-                "Secure Chat",
-
-            status:
-                "online",
-
-            timestamp:
-                new Date()
-                    .toISOString()
-        });
-    }
-);
-
-
-// =====================================================
-// SOCKET.IO
-// =====================================================
-
-const io =
-    new Server(
-        server,
-        {
-            cors: {
-                origin:
-                    allowedOrigins,
-
-                credentials:
-                    true
-            }
-        }
-    );
-
-
-app.set(
-    "io",
-    io
-);
-
-
-// =====================================================
-// SOCKET.IO DÙNG CHUNG SESSION EXPRESS
-// =====================================================
-
-io.engine.use(
-    sessionMiddleware
-);
-
-
-// =====================================================
-// KHỞI TẠO SOCKET CHAT
-// =====================================================
-
-initChatSocket(
-    io
-);
-
-
-// =====================================================
-// 404 API
-// =====================================================
-
-app.use(
-    "/api",
-
-    (
-        req,
-        res
-    ) => {
-
-        return res
-            .status(404)
-            .json({
-                success:
-                    false,
-
-                message:
-                    `Không tìm thấy API: ${req.method} ${req.originalUrl}`
-            });
-    }
-);
-
-
-// =====================================================
-// ERROR HANDLER
-// =====================================================
-
-app.use(
-    (
-        err,
-        req,
-        res,
-        next
-    ) => {
-
-        console.error(
-            "Server error:",
-            err
-        );
-
-
-        if (
-            err.message ===
-            "Origin không được CORS cho phép."
-        ) {
-
-            return res
-                .status(403)
-                .json({
-                    success:
-                        false,
-
-                    message:
-                        err.message
-                });
-        }
-
-
-        return res
-            .status(500)
-            .json({
-                success:
-                    false,
-
-                message:
-                    "Lỗi máy chủ."
-            });
-    }
-);
-
-
-// =====================================================
-// START SERVER
-// =====================================================
-
-const PORT =
-    Number(
-        process.env.PORT ||
-        3000
-    );
-
-
-// server.listen(
-//     PORT,
-
-//     () => {
-
-//         console.log(
-//             "======================================"
-//         );
-
-//         console.log(
-//             `Secure Chat server running at http://localhost:${PORT}`
-//         );
-
-//         console.log(
-//             `Health check: http://localhost:${PORT}/api/health`
-//         );
-
-//         console.log(
-//             "======================================"
-//         );
-//     }
-// );
-server.listen(
-    PORT,
-    "0.0.0.0",
-    () => {
-        console.log(
-            `Secure Chat server running on port ${PORT}`
-        );
-    }
-);
+server.listen(PORT, "0.0.0.0", () => {
+    console.log(`SecureChat backend đang chạy tại cổng ${PORT}`);
+});

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Benchmark AES & DES | Secure Chat</title>
+
+    <!-- Cho des.js resolve được import CryptoJS -->
+    <script type="importmap">
+    {
+        "imports": {
+            "crypto-js":
+            "https://esm.sh/crypto-js@4.2.0"
+        }
+    }
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family:
+                Inter,
+                "Segoe UI",
+                Arial,
+                sans-serif;
+            background: #eef6f5;
+            color: #17312e;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        .page {
+            width: min(1250px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 32px 0 60px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .header p {
+            margin: 7px 0 0;
+            color: #6f8783;
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: #0d806f;
+            background: #e5f7f3;
+            padding: 10px 14px;
+            border-radius: 11px;
+            font-weight: 700;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #dce9e7;
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 18px;
+            box-shadow:
+                0 12px 35px
+                rgba(27, 69, 62, 0.07);
+        }
+
+        .card h2 {
+            margin-top: 0;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns:
+                repeat(
+                    3,
+                    minmax(0, 1fr)
+                );
+            gap: 14px;
+        }
+
+        label {
+            display: grid;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        input,
+        select {
+            height: 42px;
+            padding: 0 12px;
+            border: 1px solid #dce9e7;
+            border-radius: 10px;
+            outline: none;
+            background: white;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #13a58f;
+            box-shadow:
+                0 0 0 3px
+                rgba(19,165,143,.10);
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 11px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        #btnRun {
+            background: #13a58f;
+            color: white;
+        }
+
+        #btnRun:hover {
+            background: #0d806f;
+        }
+
+        #btnExport {
+            background: #e5f7f3;
+            color: #0d806f;
+        }
+
+        #btnClear {
+            background: #f0f3f3;
+            color: #526763;
+        }
+
+        button:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        #status {
+            margin-top: 14px;
+            min-height: 22px;
+            color: #6f8783;
+        }
+
+        #status.error {
+            color: #c44747;
+        }
+
+        #status.success {
+            color: #176d5d;
+        }
+
+        .warning {
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: #fff8ea;
+            color: #825b17;
+            margin-top: 14px;
+            line-height: 1.5;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1100px;
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid #e7efed;
+            padding: 10px 9px;
+            text-align: right;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f6fbfa;
+            color: #536965;
+            position: sticky;
+            top: 0;
+        }
+
+        th:first-child,
+        td:first-child {
+            text-align: left;
+        }
+
+        .empty {
+            text-align: center !important;
+            color: #6f8783;
+            padding: 35px !important;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(
+                    4,
+                    minmax(0, 1fr)
+                );
+            gap: 12px;
+        }
+
+        .summary-item {
+            background: #f5fbf9;
+            border: 1px solid #dce9e7;
+            border-radius: 13px;
+            padding: 14px;
+        }
+
+        .summary-item span {
+            display: block;
+            color: #6f8783;
+            font-size: 12px;
+        }
+
+        .summary-item strong {
+            display: block;
+            margin-top: 4px;
+            font-size: 19px;
+        }
+
+        @media (max-width: 800px) {
+            .controls,
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="header">
+
+        <div>
+            <h1>
+                AES / DES Benchmark
+            </h1>
+
+            <p>
+                Đo thời gian mã hóa, giải mã
+                và kích thước dữ liệu.
+            </p>
+        </div>
+
+        <a
+            href="./chat.html"
+            class="back-btn"
+        >
+            ← Quay lại Chat
+        </a>
+
+    </div>
+
+
+    <section class="card">
+
+        <h2>
+            Cấu hình phép đo
+        </h2>
+
+        <div class="controls">
+
+            <label>
+                Thuật toán
+
+                <select id="algorithm">
+
+                    <option value="ALL">
+                        AES-128 / 192 / 256 + DES
+                    </option>
+
+                    <option value="AES-128">
+                        AES-GCM 128 bit
+                    </option>
+
+                    <option value="AES-192">
+                        AES-GCM 192 bit
+                    </option>
+
+                    <option value="AES-256">
+                        AES-GCM 256 bit
+                    </option>
+
+                    <option value="DES">
+                        DES-CBC + HMAC
+                    </option>
+
+                </select>
+            </label>
+
+
+            <label>
+                Kích thước dữ liệu
+
+                <select id="inputSize">
+
+                    <option value="ALL">
+                        Tất cả
+                    </option>
+
+                    <option value="32">
+                        32 bytes
+                    </option>
+
+                    <option value="256">
+                        256 bytes
+                    </option>
+
+                    <option value="1024">
+                        1 KB
+                    </option>
+
+                    <option value="10240">
+                        10 KB
+                    </option>
+
+                </select>
+            </label>
+
+
+            <label>
+                Số lần lặp
+
+                <input
+                    id="iterations"
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value="30"
+                >
+            </label>
+
+        </div>
+
+
+        <div class="warning">
+            DES là thuật toán cũ và không còn được xem là
+            an toàn. Trong dự án này DES chỉ dùng để học tập
+            và so sánh hiệu năng.
+        </div>
+
+
+        <div class="actions">
+
+            <button id="btnRun">
+                ▶ Chạy benchmark
+            </button>
+
+            <button
+                id="btnExport"
+                disabled
+            >
+                Xuất CSV
+            </button>
+
+            <button id="btnClear">
+                Xóa kết quả
+            </button>
+
+        </div>
+
+
+        <div id="status">
+            Chưa chạy phép đo.
+        </div>
+
+    </section>
+
+
+    <section class="card">
+
+        <h2>
+            Tổng quan
+        </h2>
+
+        <div class="summary-grid">
+
+            <div class="summary-item">
+                <span>Số cấu hình đã đo</span>
+                <strong id="summaryTests">0</strong>
+            </div>
+
+            <div class="summary-item">
+                <span>Tổng lượt chạy</span>
+                <strong id="summaryRuns">0</strong>
+            </div>
+
+            <div class="summary-item">
+                <span>Mã hóa nhanh nhất</span>
+                <strong id="summaryEncrypt">—</strong>
+            </div>
+
+            <div class="summary-item">
+                <span>Giải mã nhanh nhất</span>
+                <strong id="summaryDecrypt">—</strong>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="card">
+
+        <h2>
+            Kết quả benchmark
+        </h2>
+
+        <div class="table-wrap">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Algorithm</th>
+                        <th>Key bits</th>
+                        <th>Input bytes</th>
+                        <th>Cipher bytes</th>
+                        <th>IV bytes</th>
+                        <th>Tag/MAC bytes</th>
+                        <th>Wire bytes</th>
+                        <th>Encrypt avg ms</th>
+                        <th>Encrypt median</th>
+                        <th>Encrypt std</th>
+                        <th>Decrypt avg ms</th>
+                        <th>Decrypt median</th>
+                        <th>Decrypt std</th>
+                        <th>Iterations</th>
+                    </tr>
+                </thead>
+
+                <tbody id="resultBody">
+
+                    <tr>
+                        <td
+                            colspan="14"
+                            class="empty"
+                        >
+                            Chưa có dữ liệu.
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<script
+    type="module"
+    src="./js/benchmark.js"
+></script>
+
+</body>
+
+</html>

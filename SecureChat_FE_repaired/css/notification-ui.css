@@ -1,3 +1,7 @@
+/* Secure Chat - Notification panel UI
+   Fixed: invalid transition values, escaped selectors, notification badge positioning.
+*/
+
 body.notification-open {
     overflow: hidden;
 }
@@ -7,6 +11,7 @@ body.notification-open {
     inset: 0;
     z-index: 1400;
     pointer-events: none;
+    isolation: isolate;
 }
 
 .notification-panel-root[hidden] {
@@ -21,11 +26,11 @@ body.notification-open {
     position: absolute;
     inset: 0;
     background: rgba(15, 18, 28, 0);
-    transition: background .18s ease;
+    transition: background 0.18s ease;
 }
 
 .notification-panel-root.open .notification-panel-backdrop {
-    background: rgba(15, 18, 28, .22);
+    background: rgba(15, 18, 28, 0.22);
 }
 
 .notification-panel {
@@ -36,12 +41,13 @@ body.notification-open {
     height: 100%;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
     background: #fff;
     color: #1e2639;
     border-left: 1px solid #e5e8f0;
-    box-shadow: -20px 0 50px rgba(23, 28, 44, .12);
+    box-shadow: -20px 0 50px rgba(23, 28, 44, 0.12);
     transform: translateX(100%);
-    transition: transform .18s ease;
+    transition: transform 0.18s ease;
 }
 
 .notification-panel-root.open .notification-panel {
@@ -73,6 +79,7 @@ body.notification-open {
 .notification-close-btn {
     width: 32px;
     height: 32px;
+    flex: 0 0 32px;
     padding: 0;
     display: grid;
     place-items: center;
@@ -124,6 +131,7 @@ body.notification-open {
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 .notification-tab:hover {
@@ -137,7 +145,7 @@ body.notification-open {
 }
 
 .notification-mark-all {
-    padding: 0;
+    padding: 4px 0 4px 6px;
     border: 0;
     background: transparent;
     color: #786cf0;
@@ -145,13 +153,22 @@ body.notification-open {
     font-size: 10px;
     font-weight: 700;
     cursor: pointer;
+    white-space: nowrap;
+}
+
+.notification-mark-all:hover {
+    color: #5547d8;
+    text-decoration: underline;
 }
 
 .notification-panel-content {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: #d5d8e4 transparent;
 }
 
 .notification-item {
@@ -162,7 +179,7 @@ body.notification-open {
     padding: 12px;
     border-radius: 12px;
     cursor: pointer;
-    transition: background .14s ease;
+    transition: background 0.14s ease;
 }
 
 .notification-item + .notification-item {
@@ -183,6 +200,7 @@ body.notification-open {
     flex: 0 0 40px;
     display: grid;
     place-items: center;
+    overflow: hidden;
     border-radius: 50%;
     background: linear-gradient(135deg, #6f63ee, #9b82ff);
     color: #fff;
@@ -195,15 +213,21 @@ body.notification-open {
     flex: 1;
 }
 
+.notification-item-copy {
+    padding-right: 10px;
+    overflow-wrap: anywhere;
+}
+
 .notification-item-copy p {
     margin: 0;
     color: #414b60;
     font-size: 12px;
-    line-height: 1.45;
+    line-height: 1.5;
 }
 
 .notification-item-copy p strong {
     color: #1f283b;
+    font-weight: 750;
 }
 
 .notification-item-copy span {
@@ -216,6 +240,7 @@ body.notification-open {
 .notification-item-actions {
     margin-top: 9px;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 7px;
 }
@@ -231,12 +256,28 @@ body.notification-open {
     font-size: 10px;
     font-weight: 750;
     cursor: pointer;
+    transition: background 0.14s ease, border-color 0.14s ease, opacity 0.14s ease;
+}
+
+.notification-action:hover {
+    border-color: #c9c4ff;
+    background: #f8f7ff;
 }
 
 .notification-action.primary {
     border-color: #7569ef;
     background: #7569ef;
     color: #fff;
+}
+
+.notification-action.primary:hover {
+    border-color: #6255df;
+    background: #6255df;
+}
+
+.notification-action:disabled {
+    cursor: wait;
+    opacity: 0.65;
 }
 
 .notification-unread-dot {
@@ -247,11 +288,12 @@ body.notification-open {
     height: 7px;
     border-radius: 50%;
     background: #786cf0;
+    box-shadow: 0 0 0 3px rgba(120, 108, 240, 0.12);
 }
 
 .notification-loading,
 .notification-empty {
-    min-height: 330px;
+    min-height: 250px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -302,10 +344,10 @@ body.notification-open {
 .notification-spinner {
     width: 25px;
     height: 25px;
-    border: 3px solid rgba(118, 105, 239, .18);
+    border: 3px solid rgba(118, 105, 239, 0.18);
     border-top-color: #7669ef;
     border-radius: 50%;
-    animation: notification-spin .7s linear infinite;
+    animation: notification-spin 0.7s linear infinite;
 }
 
 @keyframes notification-spin {
@@ -314,43 +356,77 @@ body.notification-open {
     }
 }
 
+/* Notification bell and red unread counter.
+   !important protects these positioning rules from older global button styles. */
 #btnNotifications {
-    position: relative;
+    position: relative !important;
+    overflow: visible !important;
 }
 
 #notificationBadge.notification-badge {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    min-width: 15px;
-    height: 15px;
-    padding: 0 3px;
+    position: absolute !important;
+    top: -5px !important;
+    right: -5px !important;
+    z-index: 20;
+    min-width: 17px;
+    height: 17px;
+    box-sizing: border-box;
+    padding: 0 4px;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid #fff;
     border-radius: 999px;
-    background: #ff4967;
+    background: #ff3b57;
     color: #fff;
-    font-size: 8px;
+    font-family: inherit;
+    font-size: 9px;
     font-weight: 800;
     line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(15%, -5%);
 }
 
 #notificationBadge[hidden] {
     display: none !important;
 }
 
+/* Dark theme */
 body:not(.light-theme) .notification-panel {
     background: #171b28;
     color: #eef1f7;
     border-left-color: #2b3142;
-    box-shadow: -20px 0 50px rgba(0, 0, 0, .34);
+    box-shadow: -20px 0 50px rgba(0, 0, 0, 0.34);
 }
 
 body:not(.light-theme) .notification-panel-header,
 body:not(.light-theme) .notification-filter-bar {
     border-color: #2b3142;
+}
+
+body:not(.light-theme) .notification-close-btn {
+    color: #aab3c6;
+}
+
+body:not(.light-theme) .notification-close-btn:hover {
+    background: #28243f;
+    color: #a79cff;
+}
+
+body:not(.light-theme) .notification-tab {
+    color: #a0a9bd;
+}
+
+body:not(.light-theme) .notification-tab:hover,
+body:not(.light-theme) .notification-tab.active {
+    color: #b5acff;
+    background: #292541;
+}
+
+body:not(.light-theme) .notification-mark-all {
+    color: #b1a8ff;
 }
 
 body:not(.light-theme) .notification-item:hover {
@@ -369,10 +445,29 @@ body:not(.light-theme) .notification-item-copy p strong {
     color: #f0f2f7;
 }
 
+body:not(.light-theme) .notification-item-copy span {
+    color: #929cb2;
+}
+
 body:not(.light-theme) .notification-action {
     border-color: #353c50;
     background: #1c2130;
     color: #c7cddd;
+}
+
+body:not(.light-theme) .notification-action:hover {
+    border-color: #5d568f;
+    background: #272b3d;
+}
+
+body:not(.light-theme) .notification-action.primary {
+    border-color: #7569ef;
+    background: #7569ef;
+    color: #fff;
+}
+
+body:not(.light-theme) .notification-empty h3 {
+    color: #e0e5ef;
 }
 
 body:not(.light-theme) #notificationBadge.notification-badge {
@@ -382,5 +477,73 @@ body:not(.light-theme) #notificationBadge.notification-badge {
 @media (max-width: 600px) {
     .notification-panel {
         width: 100%;
+        border-left: 0;
     }
+
+    .notification-panel-header {
+        padding: 16px;
+    }
+
+    .notification-filter-bar {
+        padding: 10px 12px;
+    }
+
+    .notification-panel-content {
+        padding: 8px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notification-panel,
+    .notification-panel-backdrop,
+    .notification-item,
+    .notification-action {
+        transition: none !important;
+    }
+
+    .notification-spinner {
+        animation-duration: 1.5s;
+    }
+}
+
+
+/* Pending friend-request badge */
+#navFriends {
+    position: relative !important;
+    overflow: visible !important;
+}
+
+#friendRequestBadge.friend-request-badge {
+    position: absolute !important;
+    /* Place the badge over the icon corner, not outside the button. */
+    top: 2px !important;
+    right: 2px !important;
+    z-index: 20;
+    min-width: 20px;
+    height: 20px;
+    box-sizing: border-box;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: #ff3b57;
+    color: #fff;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 1px 3px rgba(24, 30, 50, 0.18);
+}
+
+#friendRequestBadge[hidden] {
+    display: none !important;
+}
+
+body:not(.light-theme) #friendRequestBadge.friend-request-badge {
+    border-color: #171b28;
 }
