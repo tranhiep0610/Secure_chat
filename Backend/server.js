@@ -167,3 +167,7 @@ const PORT = Number(process.env.PORT) || 3000;
 server.listen(PORT, "0.0.0.0", () => {
     console.log(`SecureChat backend đang chạy tại cổng ${PORT}`);
 });
+
+app.set("trust proxy", 1);
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+// cookie session: sameSite: "none", secure: true
