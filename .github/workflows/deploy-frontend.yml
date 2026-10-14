@@ -1,0 +1,50 @@
+name: Deploy SecureChat Frontend to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "SecureChat_FE_repaired/**"
+      - ".github/workflows/deploy-frontend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare static frontend
+        run: |
+          test -f SecureChat_FE_repaired/index.html
+          mkdir -p _site
+          cp -R SecureChat_FE_repaired/. _site/
+          rm -rf _site/.github
+          cp _site/index.html _site/404.html
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

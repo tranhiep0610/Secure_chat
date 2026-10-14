@@ -51,15 +51,6 @@ const DEMO_PREVIEWS = {
   bob: 'Thử phần DES + HMAC nhé!'
 };
 
-function avatarHTML(name, size = 'avatar-md', online = false) {
-  const asset = AVATAR_ASSETS[name];
-  const classes = `avatar ${size} ${avatarClass(name)}${asset ? ' avatar-photo' : ''}`;
-  const face = asset
-    ? `<img src="./assets/avatars/${asset}.png" alt="" loading="lazy">`
-    : esc(initials(name));
-
-  return `<span class="${classes}">${face}${online ? '<i class="online-dot"></i>' : ''}</span>`;
-}
 
 function setAvatarElement(element, name, size = 'avatar-lg', online = false) {
   if (!element) return;
@@ -72,6 +63,31 @@ function setAvatarElement(element, name, size = 'avatar-lg', online = false) {
       ? `<img src="./assets/avatars/${asset}.png" alt="" loading="lazy">`
       : esc(initials(name))
   }${online ? '<i class="online-dot"></i>' : ''}`;
+}
+
+let avatarVer = Date.now(); // đổi giá trị này để buộc trình duyệt tải lại ảnh
+
+function serverAvatarFace(name, userId) {
+  const img = userId && !String(userId).startsWith('demo-')
+    ? `<img class="avatar-img" src="${API_BASE}/api/avatars/${esc(userId)}?v=${avatarVer}" alt="" loading="lazy" onerror="this.remove()">`
+    : '';
+  return `${esc(initials(name))}${img}`;
+}
+
+function avatarHTML(name, size = 'avatar-md', online = false, userId = '') {
+  const asset = AVATAR_ASSETS[name];
+  const classes = `avatar ${size} ${avatarClass(name)}${asset || userId ? ' avatar-photo' : ''}`;
+  const face = asset
+    ? `<img src="./assets/avatars/${asset}.png" alt="" loading="lazy">`
+    : serverAvatarFace(name, userId);
+
+  return `<span class="${classes}">${face}${online ? '<i class="online-dot"></i>' : ''}</span>`;
+}
+
+function setServerAvatar(element, name, userId, size = 'avatar-lg', online = false) {
+  if (!element) return;
+  element.className = `avatar ${size} ${avatarClass(name)} avatar-photo`;
+  element.innerHTML = `${serverAvatarFace(name, userId)}${online ? '<i class="online-dot"></i>' : ''}`;
 }
 
 const timeLabel = value => {
@@ -157,6 +173,60 @@ function icon(name) {
 $$('[data-icon]').forEach(node => {
   node.innerHTML = icon(node.dataset.icon);
 });
+
+/* ===== Ảnh đại diện của chính mình (lưu trên trình duyệt này) ===== */
+let ownAvatarId = ''; // cố định suốt phiên, không đổi khi state.user bị thay
+
+const avatarKey = () => `securechat.avatar.${ownAvatarId || 'me'}`;
+
+function getUserAvatar() {
+  try { return localStorage.getItem(avatarKey()) || ''; } catch { return ''; }
+}
+
+function saveUserAvatar(_userId, dataUrl) {
+  try {
+    localStorage.setItem(avatarKey(), dataUrl);
+    console.log('[avatar] đã lưu vào', avatarKey());
+    return true;
+  } catch { return false; }
+}
+
+// Cắt vuông phần giữa ảnh và thu nhỏ còn 256x256 cho nhẹ, vừa dung lượng localStorage.
+function resizeAvatar(file, size = 256) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const side = Math.min(img.width, img.height);
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      canvas.getContext('2d').drawImage(
+        img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size
+      );
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Không đọc được ảnh.')); };
+    img.src = url;
+  });
+}
+
+let pendingAvatar = null; // ảnh vừa chọn, chưa bấm Lưu
+
+function setPhotoAvatar(element, dataUrl, size) {
+  element.className = `avatar ${size} avatar-photo`;
+  element.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = dataUrl;
+  img.alt = '';
+  element.append(img);
+}
+
+function renderOwnAvatar() {
+  const el = $('#railAvatar');
+  if (!el || !state.user) return;
+  setServerAvatar(el, state.user.displayName, state.user.id, 'avatar-xl', true);
+}
 
 const state = {
   user: null,
@@ -288,10 +358,11 @@ function setAppView(user, isDemo = false) {
   $('#authView').hidden = true;
   $('#appView').hidden = false;
   $('#appView').classList.toggle('rail-expanded', !state.railCollapsed);
-  setAvatarElement($('#railAvatar'), user.displayName, 'avatar-xl', true);
+    renderOwnAvatar();
   $('#railUserName').textContent = user.displayName;
-  $('#appView').classList.toggle('profile-open', window.innerWidth > 1020);
-  state.profileOpen = window.innerWidth > 1020;
+  // Đăng nhập xong không tự mở hồ sơ
+$('#appView').classList.remove('profile-open');
+state.profileOpen = false;
   loadAppData().then(() => connectEvents()).catch(err => toast(err.message, 'error'));
 }
 
@@ -333,13 +404,14 @@ function normalizeConversationForUI(raw, fallbackPeerId = '') {
 }
 
 async function loadAppData() {
-  const [conversationData, friendData, notificationData, blockData] =
-    await Promise.all([
-      apiGet('/api/messages/conversations'),
-      apiGet('/api/friends'),
-      Promise.resolve({ notifications: [] }),
-      apiGet('/api/blocks')
-    ]);
+  const [conversationData, friendData, notificationData, blockData, groupData] =
+  await Promise.all([
+    apiGet('/api/messages/conversations'),
+    apiGet('/api/friends'),
+    Promise.resolve({ notifications: [] }),
+    apiGet('/api/blocks'),
+    apiGet('/api/groups').catch(() => ({ groups: [] }))
+  ]);
 
   state.conversations = Array.isArray(conversationData?.conversations)
     ? conversationData.conversations
@@ -353,6 +425,7 @@ async function loadAppData() {
     ? notificationData.notifications
     : [];
   state.blocks = Array.isArray(blockData?.blocks) ? blockData.blocks : [];
+  state.groups = Array.isArray(groupData?.groups) ? groupData.groups : [];
 
   renderCurrentView();
   updateBadges();
@@ -384,7 +457,7 @@ const API_BASE = (location.port === '3000' || location.port === '')
   ? ''
   : `http://${location.hostname}:3000`;
 
-const POLL_INTERVAL_MS = 2500;
+const POLL_INTERVAL_MS = 1500;
 let pollTimer = null;
 let polling = false;
 let realtime = null;
@@ -461,16 +534,60 @@ async function pollData() {
   }
 }
 
-async function handleRealtimeMessage({ conversationId }) {
-  console.log('[realtime] có tin mới', conversationId);
+async function decryptOne(m, convId) {
+  const passphrase = getConversationPassphrase(convId);
+  if (!passphrase) return '!NO_KEY!';
   try {
-    await refreshConversationsOnly();
-    if (state.selected?.id === String(conversationId) && !document.hidden) {
-      await loadMessages();
-    }
-  } catch (error) {
-    if (error.status === 401) setAuthView();
+    return m.algorithm === 'AES-GCM'
+      ? await decryptAESMessage(m.envelope, passphrase, convId)
+      : await decryptDESMessage(m.envelope, passphrase, convId);
+  } catch { return '!DECRYPT_ERROR!'; }
+}
+
+async function handleRealtimeMessage({ conversationId, message }) {
+  const convId = String(conversationId || message?.conversationId || '');
+  if (!convId) return;
+
+  const conv = state.conversations.find(c => c.id === convId);
+  const viewing = state.selected?.id === convId && !document.hidden;
+
+  // Hội thoại chưa có trong danh sách (tin đầu tiên): tải danh sách
+  if (!conv || !message) {
+    await refreshConversationsOnly().catch(() => {});
+    return;
   }
+
+  // Tin này polling đã thấy rồi thì bỏ qua, tránh đếm trùng
+  if (conv.lastMessage?.id === message.id) return;
+
+  // 1. Cập nhật danh sách ngay, không chờ server
+  const last = {
+    id: message.id,
+    senderId: message.senderId,
+    algorithm: message.algorithm,
+    createdAt: message.createdAt
+  };
+  conv.lastMessage = last;
+  conv.updatedAt = message.createdAt;
+  if (!viewing) conv.unreadCount = (conv.unreadCount || 0) + 1;
+  if (state.selected?.id === convId) state.selected.lastMessage = last;
+
+  state.conversations = [conv, ...state.conversations.filter(c => c !== conv)];
+  if (state.view === 'chats') renderConversations();
+  updateBadges();
+
+  if (!viewing) {
+    toast(`${conv.peer.displayName || conv.peer.username} đã gửi tin nhắn mới.`, 'success', 'Tin nhắn mới');
+    return;
+  }
+
+  // 2. Đang mở hội thoại này: hiện tin ngay, rồi mới đồng bộ "đã đọc"
+  if (!state.messages.some(m => m.id === message.id)) {
+    state.messages.push(message);
+    state.decrypted.set(message.id, await decryptOne(message, convId));
+    renderMessages();
+  }
+  loadMessages().catch(() => {});
 }
 
 // Người kia đã đọc tin của mình: đổi ✓ thành ✓✓ ngay
@@ -580,6 +697,27 @@ function renderConversations() {
   $('#listTabs').querySelectorAll('button').forEach(button => {
     button.classList.toggle('active', button.dataset.tab === state.listTab);
   });
+    if (state.listTab === 'groups') {
+    const groups = (state.groups || []).filter(g =>
+      String(g?.name ?? '').toLowerCase().includes(query)
+    );
+
+    content.innerHTML = groups.length
+      ? groups.map(g => `<button class="conversation-item" data-group-id="${esc(g.id)}">
+          ${avatarHTML(g.name || '?', 'avatar-md', false)}
+          <span class="conversation-copy">
+            <span class="conversation-top"><span class="conversation-name">${esc(g.name)}</span></span>
+            <span class="conversation-preview">${esc(String(g.memberCount ?? g.members?.length ?? 0))} thành viên</span>
+          </span>
+        </button>`).join('')
+      : `<div class="empty-list">
+          <div class="welcome-illustration" style="margin:0 auto 15px;width:54px;height:54px">${icon('users')}</div>
+          <b>${query ? 'Không tìm thấy nhóm' : 'Chưa có nhóm'}</b>
+          <p>${query ? 'Thử từ khóa khác.' : 'Tạo nhóm để trò chuyện với nhiều bạn bè cùng lúc.'}</p>
+          <button class="btn btn-outline" data-action="open-add-group">Thêm nhóm</button>
+        </div>`;
+    return;
+  }
 
   if (!rows.length) {
     content.innerHTML = `<div class="empty-list">
@@ -592,7 +730,7 @@ function renderConversations() {
   }
 
   content.innerHTML = rows.filter(c => c?.id && c?.peer?.id).map(c => `<button class="conversation-item ${state.selected?.id === c.id ? 'active' : ''}" data-conversation-id="${esc(c.id)}">
-    ${avatarHTML(c.peer.displayName || c.peer.username || '?', 'avatar-md', String(c.peer.id).startsWith('demo-'))}
+    ${avatarHTML(c.peer.displayName || c.peer.username || '?', 'avatar-md', String(c.peer.id).startsWith('demo-'), c.peer.id)}
     <span class="conversation-copy">
       <span class="conversation-top">
         <span class="conversation-name">${esc(c.peer.displayName || c.peer.username || '?')}</span>
@@ -637,7 +775,7 @@ function renderFriendsView() {
       const username = f.username || f.user?.username || '';
       return `
       <button class="conversation-item" data-peer-id="${esc(peerId)}">
-        ${avatarHTML(displayName, 'avatar-md', false)}
+        ${avatarHTML(displayName, 'avatar-md', false, peerId)}
         <span class="conversation-copy">
           <span class="conversation-top"><span class="conversation-name">${esc(displayName)}</span></span>
           <span class="conversation-preview">@${esc(username)}</span>
@@ -669,7 +807,7 @@ function renderChatHeader() {
 
   const peer = c?.peer;
   $('#chatPeerName').textContent = peer?.displayName || 'Chọn một cuộc trò chuyện';
-  setAvatarElement($('#chatPeerAvatar'), peer?.displayName || '?', 'avatar-lg', Boolean(peer));
+  setServerAvatar($('#chatPeerAvatar'), peer?.displayName || '?', peer?.id, 'avatar-lg', Boolean(peer));
 
   $('#chatPeerStatus').innerHTML = peer
     ? `<span class="status-dot"></span> ${String(peer.id || '').startsWith('demo-') ? 'Đang online' : 'Đã kết nối'}`
@@ -711,7 +849,7 @@ function renderProfile() {
 
   pane.innerHTML = `
     <div class="profile-hero">
-      <div class="profile-avatar-wrap">${avatarHTML(peer.displayName, '', false)}<i class="online-dot"></i></div>
+      <div class="profile-avatar-wrap">${avatarHTML(peer.displayName, '', false, peer.id)}<i class="online-dot"></i></div>
       <h2>${esc(peer.displayName)}</h2>
       <div class="profile-username">@${esc(peer.username)}</div>
     </div>
@@ -911,7 +1049,6 @@ async function selectConversation(conversation) {
 
   try {
     await loadMessages();
-    await loadAppData();
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -1015,6 +1152,7 @@ function openDialog(title, body, footer = '', eyebrow = 'SECURECHAT') {
 }
 
 function closeDialog() {
+  pendingAvatar = null;
   $('#appDialog').close();
 }
 
@@ -1024,10 +1162,20 @@ function closeProfile() {
 }
 
 function toggleProfile() {
-  const app = $('#appView');
+  const app = document.querySelector('#appView');
+  const pane = document.querySelector('#profilePane');
+
+  if (!app || !pane) {
+    console.error('Không tìm thấy appView hoặc profilePane');
+    return;
+  }
+
   const open = !app.classList.contains('profile-open');
 
   app.classList.toggle('profile-open', open);
+  pane.style.display = 'flex';
+  pane.style.transform = open ? 'translateX(0)' : '';
+
   state.profileOpen = open;
 }
 
@@ -1045,6 +1193,43 @@ function openAddFriend() {
   );
 
   setTimeout(() => $('#friendSearchInput')?.focus(), 50);
+}
+
+function closeAddMenu() {
+  const menu = $('#addMenu');
+  if (!menu || menu.hidden) return;
+  menu.hidden = true;
+  $('[data-action="toggle-add-menu"]')?.setAttribute('aria-expanded', 'false');
+}
+
+function openAddGroup() {
+  const friends = state.friends.filter(f => friendUserId(f));
+
+  const list = friends.length
+    ? friends.map(f => {
+        const id = friendUserId(f);
+        const name = f.displayName || f.user?.displayName || f.username || f.user?.username || '?';
+        const username = f.username || f.user?.username || '';
+        return `<label class="group-member">
+          <input type="checkbox" name="member" value="${esc(id)}">
+          ${avatarHTML(name, 'avatar-sm', false)}
+          <span class="result-copy"><b>${esc(name)}</b><small>@${esc(username)}</small></span>
+        </label>`;
+      }).join('')
+    : '<div class="empty-list">Bạn chưa có bạn bè nào để thêm vào nhóm.</div>';
+
+  openDialog(
+    'Tạo nhóm mới',
+    `<p>Đặt tên nhóm và chọn ít nhất 2 người bạn để thêm vào.</p>
+     <form id="groupForm" class="form-stack">
+       <label>Tên nhóm<input name="name" maxlength="50" required autocomplete="off" placeholder="vd: Nhóm học tập"></label>
+     </form>
+     <div class="group-member-list">${list}</div>`,
+    '<button class="btn btn-outline" type="button" data-action="close-dialog">Hủy</button><button class="btn btn-primary" type="button" data-action="submit-group">Tạo nhóm</button>',
+    'NHÓM TRÒ CHUYỆN'
+  );
+
+  setTimeout(() => $('#groupForm input[name="name"]')?.focus(), 50);
 }
 
 async function searchFriends(query) {
@@ -1087,7 +1272,7 @@ async function searchFriends(query) {
 
           return `
             <div class="result-item">
-              ${avatarHTML(u.displayName, 'avatar-md', false)}
+              ${avatarHTML(u.displayName, 'avatar-md', false, u.id)}
               <span class="result-copy"><b>${esc(u.displayName)}</b><small>@${esc(u.username)}</small></span>
               <button class="btn btn-outline" ${attrs}>${label}</button>
             </div>`;
@@ -1192,20 +1377,28 @@ function openSettings(section = 'account') {
     ${content[active]}</section></div>`,
     '<button class="btn btn-outline" data-action="close-dialog">Đóng</button>',
     'CÀI ĐẶT TÀI KHOẢN');
+   // Hiện ảnh đã lưu (hoặc ảnh vừa chọn nhưng chưa lưu) trong ô xem trước
+    const previewEl = $('#settingsAvatarPreview');
+  if (previewEl) {
+    if (pendingAvatar) setPhotoAvatar(previewEl, pendingAvatar, 'avatar-xl');
+    else setServerAvatar(previewEl, state.user.displayName, state.user.id, 'avatar-xl');
+  }
+
   const avatarInput = $('#settingsAvatarFile');
-  avatarInput?.addEventListener('change', () => {
+  avatarInput?.addEventListener('change', async () => {
     const file = avatarInput.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) return toast('Hãy chọn tệp ảnh.', 'error');
-    if (file.size > 2 * 1024 * 1024) return toast('Ảnh đại diện tối đa 2 MB.', 'error');
-    const reader = new FileReader();
-    reader.onload = () => {
+    if (file.size > 5 * 1024 * 1024) return toast('Ảnh đại diện tối đa 5 MB.', 'error');
+
+    try {
+      pendingAvatar = await resizeAvatar(file);
       const preview = $('#settingsAvatarPreview');
-      if (preview) preview.innerHTML = `<img alt="Ảnh xem trước" src="${reader.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-      try { localStorage.setItem('securechat.avatarPreview', String(reader.result)); } catch {}
-      toast('Đã xem trước ảnh trên thiết bị. API lưu ảnh lên máy chủ chưa được cấu hình.');
-    };
-    reader.readAsDataURL(file);
+      if (preview) setPhotoAvatar(preview, pendingAvatar, 'avatar-xl');
+      toast('Đã chọn ảnh. Bấm "Lưu thay đổi" để áp dụng.');
+    } catch (error) {
+      toast(error.message, 'error');
+    }
   });
 }
 function openManageKey() {
@@ -1266,14 +1459,42 @@ async function sendMessage(textOverride = null, filePayload = null) {
       ? await encryptAESMessage(text, passphrase, state.selected.id, state.user.id)
       : await encryptDESMessage(text, passphrase, state.selected.id, state.user.id);
 
-    await apiPost('/api/messages', {
-  receiverId: state.selected.peer.id,
-  message: envelope,
-  algorithm
-});
+        const res = await apiPost('/api/messages', {
+      receiverId: state.selected.peer.id,
+      message: envelope,
+      algorithm
+    });
 
-    await loadMessages();
-    await loadAppData();
+    const convId = state.selected?.id;
+    const sent = res?.message;
+
+    if (sent?.id && convId && state.selected?.id === convId) {
+      if (!state.messages.some(m => m.id === sent.id)) state.messages.push(sent);
+      state.decrypted.set(sent.id, text);
+
+      const last = {
+        id: sent.id,
+        senderId: sent.senderId,
+        algorithm: sent.algorithm,
+        createdAt: sent.createdAt
+      };
+      state.selected.lastMessage = last;
+
+      const row = state.conversations.find(c => c.id === convId);
+      if (row) {
+        row.lastMessage = last;
+        row.updatedAt = sent.createdAt;
+        state.conversations = [row, ...state.conversations.filter(c => c !== row)];
+      }
+
+      loadedLast = { convId, msgId: sent.id };
+      renderMessages();
+      renderCurrentView();
+    } else {
+      await loadMessages();
+    }
+
+    refreshConversationsOnly().catch(() => {});
   } catch (error) {
     if (!filePayload) input.value = text;
     toast(error.message, 'error', 'Không gửi được tin nhắn');
@@ -1670,19 +1891,20 @@ async function handleAction(action, button) {
       if (input) input.type = input.type === 'password' ? 'text' : 'password';
       break;
     }
-    case 'demo-login': {
-      const username = button.dataset.user;
+        case 'demo-login': {
+      const identity = button.dataset.user;
 
       try {
         const result = await apiPost('/api/auth/login', {
-          identity: username,
+          identity,
           password: 'SecureChat123!'
         });
 
-        setAppView(result.user, true);
+        setAppView(result.user, Boolean(result.isDemo));
       } catch (error) {
-        toast(error.message, 'error');
+        toast(error.message, 'error', 'Không đăng nhập được tài khoản demo');
       }
+
       break;
     }
     
@@ -1723,9 +1945,43 @@ case 'confirm-logout':
     case 'settings-tab':
       openSettings(button.dataset.section || 'account');
       break;
+        case 'toggle-add-menu': {
+      const menu = $('#addMenu');
+      if (!menu) break;
+      menu.hidden = !menu.hidden;
+      button.setAttribute('aria-expanded', String(!menu.hidden));
+      break;
+    }
     case 'open-add-friend':
+      closeAddMenu();
       openAddFriend();
       break;
+    case 'open-add-group':
+      closeAddMenu();
+      openAddGroup();
+      break;
+    case 'submit-group': {
+      const name = $('#groupForm input[name="name"]')?.value.trim();
+      const memberIds = $$('#dialogBody input[name="member"]:checked').map(i => i.value);
+
+      if (!name) return toast('Hãy đặt tên nhóm.', 'error');
+      if (memberIds.length < 2) return toast('Chọn ít nhất 2 người bạn để tạo nhóm.', 'error');
+
+      try {
+        const result = await apiPost('/api/groups', { name, memberIds });
+        const group = result?.group || { id: `local-${Date.now()}`, name, members: memberIds };
+
+        state.groups = [group, ...(state.groups || [])];
+        closeDialog();
+        switchView('chats');
+        state.listTab = 'groups';
+        renderConversations();
+        toast('Đã tạo nhóm.');
+      } catch (error) {
+        toast(error.message || 'Backend chưa hỗ trợ tạo nhóm.', 'error', 'Không tạo được nhóm');
+      }
+      break;
+    }
     case 'open-notifications':
       openNotifications();
       break;
@@ -1804,7 +2060,7 @@ case 'confirm-logout':
       openDialog(
         'Ảnh đại diện',
         `<div class="profile-hero">
-          ${avatarHTML(state.selected?.peer.displayName, '', false).replace(
+          ${avatarHTML(state.selected?.peer.displayName, '', false, state.selected?.peer.id).replace(
             'avatar-photo"',
             'avatar-photo" style="width:130px;height:130px;font-size:40px"'
           )}
@@ -1848,6 +2104,7 @@ case 'confirm-logout':
 }
 
 document.addEventListener('click', async event => {
+  if (!event.target.closest('.add-menu-wrap')) closeAddMenu();
   const actionButton = event.target.closest('[data-action]');
   const viewButton = event.target.closest('[data-view]');
   const tabButton = event.target.closest('[data-tab]');
@@ -2026,17 +2283,53 @@ $('#appDialog').addEventListener('click', event => {
 });
 
 $('#appDialog').addEventListener('submit', async event => {
-  if (event.target.id === 'friendSearchForm') {
+    if (event.target.id === 'groupForm') {
+    event.preventDefault();
+    $('[data-action="submit-group"]')?.click();
+  } else if (event.target.id === 'friendSearchForm') {
     event.preventDefault();
     await searchFriends($('#friendSearchInput').value.trim());
-  } else if (event.target.id === 'settingsForm') {
+    } else if (event.target.id === 'settingsForm') {
     event.preventDefault();
+
+    // Lưu ảnh trước, để ảnh vẫn được giữ kể cả khi API đổi tên/giới thiệu báo lỗi
+           let avatarError = null;
+
+    if (pendingAvatar) {
+      try {
+        await apiPatch('/api/avatars/me', { dataUrl: pendingAvatar });
+        pendingAvatar = null;
+        avatarVer = Date.now();
+      } catch (error) {
+        avatarError = error;
+      }
+    }
+
     try {
       const formData = Object.fromEntries(new FormData(event.target));
       const data = await apiPatch('/api/profile', formData);
-      state.user = data.user;
+      state.user = { ...state.user, ...data.user };
       $('#railUserName').textContent = state.user.displayName;
-      setAvatarElement($('#railAvatar'), state.user.displayName, 'avatar-xl', true);
+      renderOwnAvatar();
+      renderCurrentView();
+      renderChatHeader();
+
+      if (avatarError) {
+        toast(avatarError.message || 'Không lưu được ảnh đại diện.', 'error', 'Đã lưu hồ sơ, ảnh chưa lưu được');
+      } else {
+        toast(data.message || 'Đã lưu thông tin tài khoản.');
+      }
+      openSettings('account');
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+
+    try {
+      const formData = Object.fromEntries(new FormData(event.target));
+      const data = await apiPatch('/api/profile', formData);
+      state.user = { ...state.user, ...data.user };
+      $('#railUserName').textContent = state.user.displayName;
+      renderOwnAvatar();
       toast(data.message || 'Đã lưu thông tin tài khoản.');
       openSettings('account');
     } catch (error) {
@@ -2080,14 +2373,19 @@ $('#appDialog').addEventListener('change', event => {
 });
 
 window.addEventListener('resize', () => {
-  if (window.innerWidth > 1020 && state.user) {
-    state.profileOpen = true;
-    $('#appView').classList.add('profile-open');
+  // Thu nhỏ màn hình thì đóng hồ sơ, không tự bật lại
+  if (window.innerWidth <= 1020 && state.profileOpen) {
+    state.profileOpen = false;
+    $('#appView').classList.remove('profile-open');
   }
 });
 
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) pollData();
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeAddMenu();
 });
 setupTheme();
 

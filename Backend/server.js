@@ -1,5 +1,7 @@
 const path = require("path");
 require("dotenv").config();
+const groupRoutes = require("./routes/group.routes");
+const avatarRoutes = require("./routes/avatar.routes"); 
 
 const express = require("express");
 const http = require("http");
@@ -79,8 +81,10 @@ app.use(
 // =====================================================
 // BODY PARSER
 // =====================================================
+
 app.use(express.json({ limit: "8mb" }));
 app.use(express.urlencoded({ extended: true, limit: "8mb" }));
+                  
 
 // =====================================================
 // SESSION
@@ -141,6 +145,9 @@ console.log("ĐÃ ĐĂNG KÝ POST /api/messages");
 app.use("/api/friends", friendRoutes);
 app.use("/api/blocks", blockRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/groups", groupRoutes);
+app.use("/api/avatars", avatarRoutes);
+console.log("ĐÃ ĐĂNG KÝ /api/groups và /api/avatars");
 
 app.get("/api/health", (req, res) => {
     return res.json({

@@ -147,11 +147,17 @@
     <section id="listPane" class="list-pane">
       <header class="list-header">
         <div><span class="eyebrow">KHÔNG GIAN CỦA BẠN</span><h1 id="listTitle">Trò chuyện</h1></div>
-        <button class="icon-button icon-button-tint" data-action="open-add-friend" title="Thêm cuộc trò chuyện"><span data-icon="plus"></span></button>
+        <div class="add-menu-wrap">
+  <button class="icon-button icon-button-tint" data-action="toggle-add-menu" title="Thêm" aria-haspopup="true" aria-expanded="false"><span data-icon="plus"></span></button>
+  <div id="addMenu" class="add-menu" role="menu" hidden>
+    <button type="button" role="menuitem" data-action="open-add-friend"><span data-icon="user-plus"></span><span>Thêm bạn bè</span></button>
+    <button type="button" role="menuitem" data-action="open-add-group"><span data-icon="users"></span><span>Thêm nhóm</span></button>
+  </div>
+</div>
       </header>
       <label class="search-box"><span data-icon="search"></span><input id="conversationSearch" type="search" placeholder="Tìm kiếm cuộc trò chuyện…" autocomplete="off"><kbd>⌘ K</kbd></label>
       <div id="listTabs" class="list-tabs">
-        <button class="active" data-tab="all">Tất cả</button><button data-tab="friends">Bạn bè</button><button data-tab="unread">Chưa đọc</button>
+        <button class="active" data-tab="all">Tất cả</button><button data-tab="groups">Nhóm</button><button data-tab="unread">Chưa đọc</button>
       </div>
       <div id="listContent" class="list-content" aria-live="polite"><div class="loading-state"><span class="spinner"></span> Đang tải cuộc trò chuyện…</div></div>
       <footer class="list-footer"><span class="status-dot"></span><span id="connectionStatus">Đang kết nối an toàn</span><button class="icon-button icon-button-small" data-action="open-profile-settings" title="Hồ sơ"><span data-icon="user-round"></span></button></footer>
@@ -225,5 +231,6 @@
   </section>
 
   <script type="module" src="./js/app.js"></script>
+  <script type="module" src="./scripts/seedDemoUsers.js"></script>
 </body>
 </html>
