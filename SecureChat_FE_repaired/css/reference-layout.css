@@ -2064,3 +2064,162 @@ svg[viewBox="0 0 24 24"][aria-hidden="true"] {
   object-fit: cover;
   border-radius: inherit;
 }
+@media (min-width: 761px) and (max-width: 1280px) {
+  /* thanh trái thu gọn */
+  #appView.app-shell:not(.rail-expanded):not(.profile-open) {
+    grid-template-columns: 64px clamp(210px, 26vw, 280px) minmax(0, 1fr) !important;
+    gap: 8px;
+    padding: 8px;
+  }
+  /* thanh trái mở rộng */
+  #appView.app-shell.rail-expanded:not(.profile-open) {
+    grid-template-columns: 170px clamp(210px, 26vw, 280px) minmax(0, 1fr) !important;
+    gap: 8px;
+    padding: 8px;
+  }
+}
+ 
+/* Danh sách chat gọn hơn một chút */
+@media (max-width: 1280px) {
+  .list-pane { padding: 16px 10px 10px; }
+  .list-header h1 { font-size: 22px; }
+  .list-header .icon-button { width: 42px; height: 42px; }
+  .conversation-item { min-height: 66px; padding: 8px; gap: 10px; }
+  .conversation-item .avatar { width: 48px; height: 48px; }
+}
+ 
+/* ---------- 2. Khung chat là "container" để tự đổi bố cục theo bề rộng ---------- */
+.chat-pane {
+  container-type: inline-size;
+  container-name: chat;
+  min-width: 0;
+}
+ 
+/* ---------- 3. Header: tên luôn đọc được, nút gọn lại ---------- */
+.chat-header { min-height: 68px; padding: 10px 16px; gap: 12px; }
+.chat-peer { min-width: 0; flex: 1 1 auto; }
+.chat-peer-title { min-width: 0; }
+.chat-peer-title b {
+  display: block;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-peer-title small {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-header-actions { flex: 0 0 auto; gap: 6px; }
+.chat-header-actions .icon-button { width: 40px; height: 40px; border-radius: 13px; }
+.chat-header-actions .icon-button svg { width: 20px; height: 20px; }
+ 
+/* Khung chat hẹp: ẩn nút gọi thoại + video (còn tìm kiếm và 3 chấm) */
+@container chat (max-width: 520px) {
+  .chat-header-actions .icon-button:nth-child(1),
+  .chat-header-actions .icon-button:nth-child(2) { display: none; }
+}
+ 
+/* ---------- 4. Vùng tin nhắn: chữ to hơn, bong bóng rộng hơn ---------- */
+.messages { padding: 18px 20px 14px; gap: 10px; }
+.message-row { max-width: 88%; }
+.message-bubble {
+  font-size: 15px;
+  line-height: 1.5;
+  padding: 10px 14px;
+  border-radius: 18px;
+  overflow-wrap: anywhere;
+}
+.message-bubble small { font-size: 12px; }
+.message-bubble .text-button { font-size: 13px; font-weight: 700; }
+.message-meta,
+.message-algorithm { font-size: 11.5px; }
+.date-chip { font-size: 12px; padding: 6px 14px; }
+ 
+@container chat (max-width: 520px) {
+  .messages { padding: 14px 12px 10px; }
+  .message-row { max-width: 94%; }
+}
+ 
+/* ---------- 5. Ô soạn tin: ô nhập chiếm cả hàng trên, nút nằm hàng dưới ---------- */
+.composer { padding: 10px 14px 8px; }
+ 
+.composer-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+ 
+/* Ô nhập luôn rộng hết cỡ, nằm đầu tiên */
+.composer-input-wrap {
+  order: -1;
+  flex: 1 1 100%;
+  min-width: 0;
+}
+.composer-input-wrap textarea {
+  width: 100%;
+  min-height: 48px;
+  max-height: 140px;
+  padding: 13px 16px;
+  font-size: 15px;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+ 
+/* Hàng nút: đính kèm, emoji, thuật toán, gửi */
+.composer-tool { width: 42px; height: 42px; border-radius: 14px; flex: 0 0 auto; }
+.composer-tool svg { width: 20px; height: 20px; }
+ 
+.algorithm-picker {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 42px;
+  border-radius: 14px;
+  padding: 0 12px;
+}
+.algorithm-picker select { font-size: 12.5px; max-width: 100%; text-overflow: ellipsis; }
+ 
+.send-button {
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+ 
+/* Khung chat rộng: đưa tất cả về 1 hàng như thường */
+@container chat (min-width: 640px) {
+  .composer-input-wrap { order: 0; flex: 1 1 0; }
+  .algorithm-picker { flex: 0 0 auto; }
+  .send-button { margin-left: 0; }
+}
+ 
+/* Dòng ghi chú mã hóa + trạng thái khóa: gọn, tự xuống dòng thay vì bị cắt */
+.composer-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: 6px;
+  font-size: 11.5px;
+}
+.encryption-note { flex: 1 1 200px; min-width: 0; }
+.key-status { flex: 0 0 auto; white-space: nowrap; }
+ 
+@container chat (max-width: 420px) {
+  .encryption-note { display: none; }   /* chỉ giữ trạng thái khóa */
+  .composer-footer { justify-content: flex-end; }
+}
+ 
+/* ---------- 6. Màn hình rất hẹp (điện thoại) ---------- */
+@media (max-width: 760px) {
+  .composer-tool { width: 40px; height: 40px; }
+  .send-button { width: 44px; height: 44px; }
+  .composer-input-wrap textarea { min-height: 46px; height: auto; }
+  .algorithm-picker { height: 40px; }
+}
+ 
